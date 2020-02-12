@@ -11,7 +11,6 @@ class UnitTestCase(unittest.TestCase):
             input_dim=4, neurons=[16, 2], activations=["relu", "sigmoid"]
         )
         
-
     def tearDown(self):
         """Call after every test case"""
         pass
