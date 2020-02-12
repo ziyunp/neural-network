@@ -405,12 +405,9 @@ class Trainer(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        print("before shuffling:\n", "input: ", input_dataset, "\n", "target: ", target_dataset)
 
         np.random.shuffle(input_dataset)
         np.random.shuffle(target_dataset)
-
-        print("after shuffling:\n", "input: ", input_dataset, "target: ", target_dataset)
 
         return (input_dataset, target_dataset)
         #######################################################################
@@ -441,21 +438,18 @@ class Trainer(object):
         #                       ** START OF YOUR CODE **
         #######################################################################
         if self.shuffle_flag:
-            self.shuffle(input_dataset, target_dataset)
+            s_input, s_target = self.shuffle(input_dataset, target_dataset)
         
         # split
         input_batches = []
         target_batches = []
-        
-        input_size = len(input_dataset)
-        target_size = len(target_dataset)
-        input_divider = input_size // self.batch_size
-        # not needed if input size and target size are the same
-        target_divider = target_size // self.batch_size 
-
-        for i in range(self.batch_size):
-            input_batches.append(input_dataset[i * input_divider : (i+1) * input_divider])
-            target_batches.append(target_dataset[i * target_divider : (i+1) * target_divider])
+        n_datapoints = input_dataset.shape[0]
+        n_batches = n_datapoints // self.batch_size 
+        if (n_datapoints % self.batch_size) != 0:
+            n_batches += 1
+        for i in range(n_batches):
+            input_batches.append(s_input[i * self.batch_size : (i + 1) * self.batch_size])
+            target_batches.append(s_target[i * self.batch_size : (i + 1) * self.batch_size])
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -587,6 +581,6 @@ def example_main():
     print("Validation accuracy: {}".format(accuracy))
 
 
-example_main()
+
 if __name__ == "__main__":
     example_main()
