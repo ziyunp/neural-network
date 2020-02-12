@@ -384,7 +384,8 @@ class Trainer(object):
             self._loss_layer = MSELossLayer()
         elif loss_fun == "bce":
             self._loss_layer = CrossEntropyLossLayer()
-
+        else:
+            print("Error: Loss function must be either 'mse' or 'bce'.")
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -437,15 +438,22 @@ class Trainer(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
+        if self._loss_layer == None:
+            print ("Error: loss layer is None")
+            return
+
         for epoch in range(self.nb_epoch):
             if self.shuffle_flag:
                 s_input, s_target = self.shuffle(input_dataset, target_dataset)
-            else: s_input, s_target = input_dataset, target_dataset
+            else: 
+                s_input, s_target = input_dataset, target_dataset
             
             # split
             input_batches = []
             target_batches = []
+            assert input_dataset.shape[0] == target_dataset.shape[0]
             n_datapoints = input_dataset.shape[0]
+
             n_batches = n_datapoints // self.batch_size 
             if (n_datapoints % self.batch_size) != 0:
                 n_batches += 1
