@@ -262,13 +262,11 @@ class MultiLayerNetwork(object):
         self._layers = []
         input_n = input_dim
         for i in len(neurons):
-            new_layer = []
-            new_layer.append(LinearLayer(input_n, neurons[i]))
+            self._layers.append(LinearLayer(input_n, neurons[i]))
             if activations[i] == "relu":
-                new_layer.append(ReluLayer())
+                self._layers.append(ReluLayer())
             elif activations[i] == "sigmoid":
-                new_layer.append(SigmoidLayer())
-            self._layers.append(new_layer)
+                self._layers.append(SigmoidLayer())
             input_n = neurons[i]
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -288,7 +286,6 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
 
         #######################################################################
         #                       ** END OF YOUR CODE **
