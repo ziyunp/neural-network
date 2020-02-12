@@ -126,21 +126,26 @@ class ReluLayer(Layer):
     def __init__(self):
         self._cache_current = None
 
+    # returns for each element in array x the maximum of the element and 0
     def forward(self, x):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        _cache_current = np.maximum(0, x)
+        return _cache_current
 
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
 
+    # returns grad_z with elements less than or equal to 0 set to zero
     def backward(self, grad_z):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        grad = np.array(grad_z,copy=True)
+        grad[_cache_current <= 0] = 0
+        return grad
 
         #######################################################################
         #                       ** END OF YOUR CODE **
