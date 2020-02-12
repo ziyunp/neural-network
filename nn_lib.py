@@ -314,8 +314,12 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
-
+        layer_output = grad_z
+        layer_input = None
+        for this_layer in self._layers:
+            layer_input = this_layer.backward(layer_output)
+            layer_output = layer_input
+        return layer_input
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -331,8 +335,9 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
-
+        for this_layer in self._layers:
+            if isinstance(this_layer, LinearLayer):
+                this_layer.update_params(learning_rate)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
