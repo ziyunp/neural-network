@@ -259,6 +259,10 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
+        if len(neurons) != len(activations):
+            raise ValueError("The length of activations should be consistent \
+                with neurons")
+
         self._layers = []
         input_n = input_dim
         for i in range(len(neurons)):
@@ -286,6 +290,10 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
+        if len(x.shape) != 2 or x.shape[1] < 1:
+            raise ValueError("Parameter x should be array of shape (batch_size\
+                , input_dim) with both dimensions larger than 0")
+
         layer_input = x
         layer_output = None
         for this_layer in self._layers:
