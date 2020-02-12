@@ -162,8 +162,8 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        self._W = None
-        self._b = None
+        self._W = xavier_init(n_in)
+        self._b = np.zeros(n_out)
 
         self._cache_current = None
         self._grad_W_current = None
@@ -189,7 +189,10 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        
+        self._cache_current = np.transpose(x)
+        
+        return np.add(np.dot(x, self._W), self._b)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -212,7 +215,9 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        self._grad_W_current = np.dot(self._cache_current, np.grad_z)
+        self._grad_b_current = np.dot(np.ones(n_out), np.grad_z)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -229,7 +234,12 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        tmp_W = np.add(self._W, np.negative(learning_rate * self._grad_W_current))
+        tmp_b = np.add(self._b, np.negative(learning_rate * self._grad_b_current))
+
+        self._W = tmp_W
+        self._b = tmp_b
 
         #######################################################################
         #                       ** END OF YOUR CODE **
