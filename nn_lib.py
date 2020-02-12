@@ -437,20 +437,28 @@ class Trainer(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        if self.shuffle_flag:
-            s_input, s_target = self.shuffle(input_dataset, target_dataset)
-        
-        # split
-        input_batches = []
-        target_batches = []
-        n_datapoints = input_dataset.shape[0]
-        n_batches = n_datapoints // self.batch_size 
-        if (n_datapoints % self.batch_size) != 0:
-            n_batches += 1
-        for i in range(n_batches):
-            input_batches.append(s_input[i * self.batch_size : (i + 1) * self.batch_size])
-            target_batches.append(s_target[i * self.batch_size : (i + 1) * self.batch_size])
-
+        for epoch in range(self.nb_epoch):
+            if self.shuffle_flag:
+                s_input, s_target = self.shuffle(input_dataset, target_dataset)
+            else: s_input, s_target = input_dataset, target_dataset
+            
+            # split
+            input_batches = []
+            target_batches = []
+            n_datapoints = input_dataset.shape[0]
+            n_batches = n_datapoints // self.batch_size 
+            if (n_datapoints % self.batch_size) != 0:
+                n_batches += 1
+            for i in range(n_batches):
+                input_batches.append(s_input[i * self.batch_size : (i + 1) * self.batch_size])
+                target_batches.append(s_target[i * self.batch_size : (i + 1) * self.batch_size])
+            
+            for n in range (n_batches):
+                outputs = self.network.forward(input_batches[n])
+                loss = self._loss_layer.forward(outputs, target_batches[n])
+                loss_grad = self._loss_layer.backward()
+                gradients = self.network.backward(loss_grad)
+                self.network.update_params(self.learning_rate)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -557,28 +565,30 @@ def example_main():
     x_val = x[split_idx:]
     y_val = y[split_idx:]
 
-    prep_input = Preprocessor(x_train)
+    # prep_input = Preprocessor(x_train)
 
-    x_train_pre = prep_input.apply(x_train)
-    x_val_pre = prep_input.apply(x_val)
+    # x_train_pre = prep_input.apply(x_train)
+    # x_val_pre = prep_input.apply(x_val)
 
     trainer = Trainer(
         network=net,
         batch_size=8,
-        nb_epoch=1000,
+        nb_epoch=1,
         learning_rate=0.01,
-        loss_fun="cross_entropy",
+        loss_fun="mse",
         shuffle_flag=True,
     )
 
-    trainer.train(x_train_pre, y_train)
-    print("Train loss = ", trainer.eval_loss(x_train_pre, y_train))
-    print("Validation loss = ", trainer.eval_loss(x_val_pre, y_val))
+    # trainer.train(x_train_pre, y_train)
+    trainer.train(x_train, y_train)
 
-    preds = net(x_val_pre).argmax(axis=1).squeeze()
-    targets = y_val.argmax(axis=1).squeeze()
-    accuracy = (preds == targets).mean()
-    print("Validation accuracy: {}".format(accuracy))
+    # print("Train loss = ", trainer.eval_loss(x_train_pre, y_train))
+    # print("Validation loss = ", trainer.eval_loss(x_val_pre, y_val))
+
+    # preds = net(x_val_pre).argmax(axis=1).squeeze()
+    # targets = y_val.argmax(axis=1).squeeze()
+    # accuracy = (preds == targets).mean()
+    # print("Validation accuracy: {}".format(accuracy))
 
 
 
