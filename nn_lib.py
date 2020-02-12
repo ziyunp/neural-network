@@ -380,6 +380,11 @@ class Trainer(object):
         #                       ** START OF YOUR CODE **
         #######################################################################
         self._loss_layer = None
+        if loss_fun == "mse":
+            self._loss_layer = MSELossLayer()
+        elif loss_fun == "bce":
+            self._loss_layer = CrossEntropyLossLayer()
+
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -400,8 +405,14 @@ class Trainer(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        print("before shuffling:\n", "input: ", input_dataset, "\n", "target: ", target_dataset)
 
+        np.random.shuffle(input_dataset)
+        np.random.shuffle(target_dataset)
+
+        print("after shuffling:\n", "input: ", input_dataset, "target: ", target_dataset)
+
+        return (input_dataset, target_dataset)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -429,7 +440,22 @@ class Trainer(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        if self.shuffle_flag:
+            self.shuffle(input_dataset, target_dataset)
+        
+        # split
+        input_batches = []
+        target_batches = []
+        
+        input_size = len(input_dataset)
+        target_size = len(target_dataset)
+        input_divider = input_size // self.batch_size
+        # not needed if input size and target size are the same
+        target_divider = target_size // self.batch_size 
+
+        for i in range(self.batch_size):
+            input_batches.append(input_dataset[i * input_divider : (i+1) * input_divider])
+            target_batches.append(target_dataset[i * target_divider : (i+1) * target_divider])
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -561,5 +587,6 @@ def example_main():
     print("Validation accuracy: {}".format(accuracy))
 
 
+example_main()
 if __name__ == "__main__":
     example_main()
