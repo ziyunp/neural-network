@@ -286,7 +286,12 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-
+        layer_input = x
+        layer_output = None
+        for this_layer in self._layers:
+            layer_output = this_layer.forward(layer_input)
+            layer_input = layer_output
+        return layer_output
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
