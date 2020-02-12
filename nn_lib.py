@@ -519,18 +519,22 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        if len(data.shape) != 2 or data.shape[1] != len(self.params):
+            raise ValueError("Invalid dataset: input dataset should have the\
+                same length on the second dimension as the dataset used to\
+                    initialise the preprocessor")
 
+        return np.add(np.multiply(data, self.params), self.col_min)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
 
 
 def example_main():
-    # input_dim = 4
-    # neurons = [16, 3]
-    # activations = ["relu", "identity"]
-    # net = MultiLayerNetwork(input_dim, neurons, activations)
+    input_dim = 4
+    neurons = [16, 3]
+    activations = ["relu", "identity"]
+    net = MultiLayerNetwork(input_dim, neurons, activations)
 
     dat = np.loadtxt("iris.dat")
     np.random.shuffle(dat)
@@ -550,28 +554,23 @@ def example_main():
     x_train_pre = prep_input.apply(x_train)
     x_val_pre = prep_input.apply(x_val)
 
-    x_train_pre = prep_input.revert(x_train_pre)
-    x_val_pre = prep_input.revert(x_val_pre)
+    trainer = Trainer(
+        network=net,
+        batch_size=8,
+        nb_epoch=1000,
+        learning_rate=0.01,
+        loss_fun="cross_entropy",
+        shuffle_flag=True,
+    )
 
-    print(x_train_pre)
-    print(x_val_pre)
-    # trainer = Trainer(
-    #     network=net,
-    #     batch_size=8,
-    #     nb_epoch=1000,
-    #     learning_rate=0.01,
-    #     loss_fun="cross_entropy",
-    #     shuffle_flag=True,
-    # )
+    trainer.train(x_train_pre, y_train)
+    print("Train loss = ", trainer.eval_loss(x_train_pre, y_train))
+    print("Validation loss = ", trainer.eval_loss(x_val_pre, y_val))
 
-    # trainer.train(x_train_pre, y_train)
-    # print("Train loss = ", trainer.eval_loss(x_train_pre, y_train))
-    # print("Validation loss = ", trainer.eval_loss(x_val_pre, y_val))
-
-    # preds = net(x_val_pre).argmax(axis=1).squeeze()
-    # targets = y_val.argmax(axis=1).squeeze()
-    # accuracy = (preds == targets).mean()
-    # print("Validation accuracy: {}".format(accuracy))
+    preds = net(x_val_pre).argmax(axis=1).squeeze()
+    targets = y_val.argmax(axis=1).squeeze()
+    accuracy = (preds == targets).mean()
+    print("Validation accuracy: {}".format(accuracy))
 
 
 if __name__ == "__main__":
