@@ -98,7 +98,8 @@ class SigmoidLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        self._cache_current = np.array(1 / (1 + np.exp(-x)))
+        return self._cache_current
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -108,7 +109,9 @@ class SigmoidLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        # taking the element wise products
+        return grad_z * self._cache_current * (1 - self._cache_current)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -123,21 +126,26 @@ class ReluLayer(Layer):
     def __init__(self):
         self._cache_current = None
 
+    # returns for each element in array x the maximum of the element and 0
     def forward(self, x):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        self._cache_current = np.maximum(0, x)
+        return self._cache_current
 
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
 
+    # returns grad_z with elements less than or equal to 0 set to zero
     def backward(self, grad_z):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        grad = np.array(grad_z,copy=True)
+        grad[self._cache_current <= 0] = 0
+        return grad
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -528,48 +536,67 @@ class Preprocessor(object):
         #######################################################################
 
 
-def example_main():
-    input_dim = 4
-    neurons = [16, 3]
-    activations = ["relu", "identity"]
-    net = MultiLayerNetwork(input_dim, neurons, activations)
+# test
 
-    dat = np.loadtxt("iris.dat")
-    np.random.shuffle(dat)
+# x = np.array([[1,0],[1,-1],[0,1]])
+# x2 = np.array([[10,0],[1,-1123],[2,1]])
 
-    x = dat[:, :4]
-    y = dat[:, 4:]
+# # y = np.array([1, 1, 0])
 
-    split_idx = int(0.8 * len(x))
+# sig = SigmoidLayer()
+# print(x)
+# print(sig.forward(x))
+# print(sig.backward(1))
 
-    x_train = x[:split_idx]
-    y_train = y[:split_idx]
-    x_val = x[split_idx:]
-    y_val = y[split_idx:]
-
-    prep_input = Preprocessor(x_train)
-
-    x_train_pre = prep_input.apply(x_train)
-    x_val_pre = prep_input.apply(x_val)
-
-    trainer = Trainer(
-        network=net,
-        batch_size=8,
-        nb_epoch=1000,
-        learning_rate=0.01,
-        loss_fun="cross_entropy",
-        shuffle_flag=True,
-    )
-
-    trainer.train(x_train_pre, y_train)
-    print("Train loss = ", trainer.eval_loss(x_train_pre, y_train))
-    print("Validation loss = ", trainer.eval_loss(x_val_pre, y_val))
-
-    preds = net(x_val_pre).argmax(axis=1).squeeze()
-    targets = y_val.argmax(axis=1).squeeze()
-    accuracy = (preds == targets).mean()
-    print("Validation accuracy: {}".format(accuracy))
+# relu = ReluLayer()
+# print(relu.forward(x))
+# print(relu.backward(x2))
 
 
-if __name__ == "__main__":
-    example_main()
+
+
+# def example_main():
+#     input_dim = 4
+#     neurons = [16, 3]
+#     activations = ["relu", "identity"]
+#     net = MultiLayerNetwork(input_dim, neurons, activations)
+
+#     dat = np.loadtxt("iris.dat")
+#     np.random.shuffle(dat)
+
+#     x = dat[:, :4]
+#     y = dat[:, 4:]
+
+#     split_idx = int(0.8 * len(x))
+
+#     x_train = x[:split_idx]
+#     y_train = y[:split_idx]
+#     x_val = x[split_idx:]
+#     y_val = y[split_idx:]
+
+#     prep_input = Preprocessor(x_train)
+
+#     x_train_pre = prep_input.apply(x_train)
+#     x_val_pre = prep_input.apply(x_val)
+
+#     trainer = Trainer(
+#         network=net,
+#         batch_size=8,
+#         nb_epoch=1000,
+#         learning_rate=0.01,
+#         loss_fun="cross_entropy",
+#         shuffle_flag=True,
+#     )
+
+#     trainer.train(x_train_pre, y_train)
+#     print("Train loss = ", trainer.eval_loss(x_train_pre, y_train))
+#     print("Validation loss = ", trainer.eval_loss(x_val_pre, y_val))
+
+#     preds = net(x_val_pre).argmax(axis=1).squeeze()
+#     targets = y_val.argmax(axis=1).squeeze()
+#     accuracy = (preds == targets).mean()
+#     print("Validation accuracy: {}".format(accuracy))
+
+
+# if __name__ == "__main__":
+#     example_main()
