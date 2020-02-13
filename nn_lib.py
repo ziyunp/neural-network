@@ -491,8 +491,12 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        if data.size == 0:
+            raise ValueError("No data in the given dataset")
 
+        col_max = np.amax(data, axis=0)
+        self.col_min = np.amin(data, axis=0)
+        self.params = np.subtract(col_max, self.col_min)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -510,8 +514,12 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        if len(data.shape) != 2 or data.shape[1] != len(self.params):
+            raise ValueError("Invalid dataset: input dataset should have the\
+                same length on the second dimension as the dataset used to\
+                    initialise the preprocessor")
 
+        return np.divide(np.subtract(data, self.col_min), self.params)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -529,8 +537,12 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        if len(data.shape) != 2 or data.shape[1] != len(self.params):
+            raise ValueError("Invalid dataset: input dataset should have the\
+                same length on the second dimension as the dataset used to\
+                    initialise the preprocessor")
 
+        return np.add(np.multiply(data, self.params), self.col_min)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
