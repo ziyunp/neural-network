@@ -98,7 +98,8 @@ class SigmoidLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        self._cache_current = np.array(1 / (1 + np.exp(-x)))
+        return self._cache_current
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -108,7 +109,9 @@ class SigmoidLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        # taking the element wise products
+        return grad_z * self._cache_current * (1 - self._cache_current)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -123,21 +126,26 @@ class ReluLayer(Layer):
     def __init__(self):
         self._cache_current = None
 
+    # returns for each element in array x the maximum of the element and 0
     def forward(self, x):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        self._cache_current = np.maximum(0, x)
+        return self._cache_current
 
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
 
+    # returns grad_z with elements less than or equal to 0 set to zero
     def backward(self, grad_z):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        grad = np.array(grad_z,copy=True)
+        grad[self._cache_current <= 0] = 0
+        return grad
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -162,8 +170,8 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        self._W = None
-        self._b = None
+        self._W = xavier_init(n_in)
+        self._b = np.zeros(n_out)
 
         self._cache_current = None
         self._grad_W_current = None
@@ -189,7 +197,10 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        
+        self._cache_current = np.transpose(x)
+        
+        return np.add(np.dot(x, self._W), self._b)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -212,7 +223,9 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        self._grad_W_current = np.dot(self._cache_current, grad_z)
+        self._grad_b_current = np.dot(np.ones(len(grad_z[0])), grad_z)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -229,7 +242,12 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        tmp_W = np.add(self._W, np.negative(learning_rate * self._grad_W_current))
+        tmp_b = np.add(self._b, np.negative(learning_rate * self._grad_b_current))
+
+        self._W = tmp_W
+        self._b = tmp_b
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -498,8 +516,12 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        if data.size == 0:
+            raise ValueError("No data in the given dataset")
 
+        col_max = np.amax(data, axis=0)
+        self.col_min = np.amin(data, axis=0)
+        self.params = np.subtract(col_max, self.col_min)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -517,8 +539,12 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        if len(data.shape) != 2 or data.shape[1] != len(self.params):
+            raise ValueError("Invalid dataset: input dataset should have the\
+                same length on the second dimension as the dataset used to\
+                    initialise the preprocessor")
 
+        return np.divide(np.subtract(data, self.col_min), self.params)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -536,11 +562,34 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        if len(data.shape) != 2 or data.shape[1] != len(self.params):
+            raise ValueError("Invalid dataset: input dataset should have the\
+                same length on the second dimension as the dataset used to\
+                    initialise the preprocessor")
 
+        return np.add(np.multiply(data, self.params), self.col_min)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
+
+
+# test
+
+# x = np.array([[1,0],[1,-1],[0,1]])
+# x2 = np.array([[10,0],[1,-1123],[2,1]])
+
+# # y = np.array([1, 1, 0])
+
+# sig = SigmoidLayer()
+# print(x)
+# print(sig.forward(x))
+# print(sig.backward(1))
+
+# relu = ReluLayer()
+# print(relu.forward(x))
+# print(relu.backward(x2))
+
+
 
 
 # def example_main():
