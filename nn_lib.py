@@ -224,8 +224,8 @@ class LinearLayer(Layer):
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        self._grad_W_current = np.dot(self._cache_current, np.grad_z)
-        self._grad_b_current = np.dot(np.ones(n_out), np.grad_z)
+        self._grad_W_current = np.dot(self._cache_current, grad_z)
+        self._grad_b_current = np.dot(np.ones(len(grad_z[0])), grad_z)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
