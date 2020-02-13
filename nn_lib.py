@@ -462,6 +462,7 @@ class Trainer(object):
                 target_batches.append(s_target[i * self.batch_size : (i + 1) * self.batch_size])
             # train with each batch
             for n in range (n_batches):
+                # TODO: replace with eval_loss?
                 outputs = self.network.forward(input_batches[n])
                 loss = self._loss_layer.forward(outputs, target_batches[n])
                 loss_grad = self._loss_layer.backward()
@@ -599,6 +600,6 @@ def example_main():
     print("Validation accuracy: {}".format(accuracy))
 
 
-example_main()
+
 if __name__ == "__main__":
     example_main()
