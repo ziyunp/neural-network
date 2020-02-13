@@ -380,6 +380,12 @@ class Trainer(object):
         #                       ** START OF YOUR CODE **
         #######################################################################
         self._loss_layer = None
+        if loss_fun == "mse":
+            self._loss_layer = MSELossLayer()
+        elif loss_fun == "bce":
+            self._loss_layer = CrossEntropyLossLayer()
+        else:
+            print("Error: Loss function must be either 'mse' or 'bce'.")
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -400,8 +406,11 @@ class Trainer(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
 
+        np.random.shuffle(input_dataset)
+        np.random.shuffle(target_dataset)
+
+        return (input_dataset, target_dataset)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -429,8 +438,35 @@ class Trainer(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        if self._loss_layer == None:
+            print ("Error: loss layer is None")
+            return
 
+        for epoch in range(self.nb_epoch):
+            if self.shuffle_flag:
+                s_input, s_target = self.shuffle(input_dataset, target_dataset)
+            else: 
+                s_input, s_target = input_dataset, target_dataset
+            
+            # split
+            input_batches = []
+            target_batches = []
+            assert input_dataset.shape[0] == target_dataset.shape[0]
+            n_datapoints = input_dataset.shape[0]
+
+            n_batches = n_datapoints // self.batch_size 
+            if (n_datapoints % self.batch_size) != 0:
+                n_batches += 1
+            for i in range(n_batches):
+                input_batches.append(s_input[i * self.batch_size : (i + 1) * self.batch_size])
+                target_batches.append(s_target[i * self.batch_size : (i + 1) * self.batch_size])
+            # train with each batch
+            for n in range (n_batches):
+                outputs = self.network.forward(input_batches[n])
+                loss = self._loss_layer.forward(outputs, target_batches[n])
+                loss_grad = self._loss_layer.backward()
+                gradients = self.network.backward(loss_grad)
+                self.network.update_params(self.learning_rate)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -448,7 +484,9 @@ class Trainer(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        
+        predictions = self.network.forward(input_dataset)
+        return self._loss_layer.forward(predictions, target_dataset)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -547,7 +585,7 @@ def example_main():
         batch_size=8,
         nb_epoch=1000,
         learning_rate=0.01,
-        loss_fun="cross_entropy",
+        loss_fun="bce",
         shuffle_flag=True,
     )
 
@@ -561,5 +599,6 @@ def example_main():
     print("Validation accuracy: {}".format(accuracy))
 
 
+example_main()
 if __name__ == "__main__":
     example_main()
