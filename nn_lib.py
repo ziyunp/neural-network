@@ -277,7 +277,19 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        self._layers = None
+        if len(neurons) != len(activations):
+            raise ValueError("The length of activations should be consistent \
+                with neurons")
+
+        self._layers = []
+        input_n = input_dim
+        for i in range(len(neurons)):
+            self._layers.append(LinearLayer(input_n, neurons[i]))
+            if activations[i] == "relu":
+                self._layers.append(ReluLayer())
+            elif activations[i] == "sigmoid":
+                self._layers.append(SigmoidLayer())
+            input_n = neurons[i]
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -296,8 +308,16 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        if len(x.shape) != 2 or x.shape[1] < 1:
+            raise ValueError("Parameter x should be array of shape (batch_size\
+                , input_dim) with both dimensions larger than 0")
 
+        layer_input = x
+        layer_output = None
+        for this_layer in self._layers:
+            layer_output = this_layer.forward(layer_input)
+            layer_input = layer_output
+        return layer_output
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -310,7 +330,7 @@ class MultiLayerNetwork(object):
         Performs backward pass through the network.
 
         Arguments:
-            grad_z {np.ndarray} -- Gradient array of shape (1,
+            grad_z {np.ndarray} -- Gradient array of shape (batch_size,
                 #_neurons_in_final_layer).
 
         Returns:
@@ -320,8 +340,12 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
-
+        layer_output = grad_z
+        layer_input = None
+        for this_layer in self._layers:
+            layer_input = this_layer.backward(layer_output)
+            layer_output = layer_input
+        return layer_input
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -337,8 +361,9 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
-
+        for this_layer in self._layers:
+            if isinstance(this_layer, LinearLayer):
+                this_layer.update_params(learning_rate)
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
