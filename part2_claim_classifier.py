@@ -1,15 +1,22 @@
 import numpy as np
 import pickle
 
+from nn_lib import *
 
-class ClaimClassifier():
+import torch
+from sklearn.metrics import classification_report, confusion_matrix
 
-    def __init__(self,):
+class ClaimClassifier(torch.nn.Module):
+
+    def __init__(self):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
         """
-        pass
+        self.batch_size = 0
+        self.D_in = 10
+        self.H = 5
+        self.D_out = 1
 
     def _preprocessor(self, X_raw):
         """Data preprocessing function.
@@ -29,7 +36,11 @@ class ClaimClassifier():
         """
         # YOUR CODE HERE
 
-        return  # YOUR CLEAN DATA AS A NUMPY ARRAY
+        self.batch_size = X_raw.shape[0]
+
+        preprocessor = Preprocessor()
+
+        return preprocessor.apply(X_raw)
 
     def fit(self, X_raw, y_raw):
         """Classifier training function.
@@ -49,11 +60,44 @@ class ClaimClassifier():
             an instance of the fitted model
         """
 
-        # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
-        # X_clean = self._preprocessor(X_raw)
-        # YOUR CODE HERE
-        pass
+        if (not y_raw):
+            print("y_raw not provided")
+            return
 
+        X_clean = torch.from_numpy(self._preprocessor(X_raw))
+
+        model = torch.nn.Sequential(
+            torch.nn.Linear(D_in, H),
+            torch.nn.ReLU(),
+            torch.nn.Linear(H, D_out),
+        )
+
+        loss_fn = torch.nn.MSELoss(reduction='sum')
+
+        learning_rate = 1e-4
+
+        for t in range(500):
+            # Forward pass
+            y_pred = model(X_clean) # X_clean needs to be a tensor
+
+            loss = loss_fn(y_pred, y_raw)
+            if t % 100 == 99:
+                print(t, loss.item())
+
+            # Zero the gradients before running the backward pass.
+            model.zero_grad()
+
+            # Backward pass
+            loss.backward()
+
+            with torch.no_grad():
+                for param in model.parameters():
+                    param -= learning_rate * param.grad
+
+        self.model = model
+
+        return model
+        
     def predict(self, X_raw):
         """Classifier probability prediction function.
 
@@ -73,11 +117,12 @@ class ClaimClassifier():
         """
 
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
-        # X_clean = self._preprocessor(X_raw)
+        X_clean = torch.from_numpy(self._preprocessor(X_raw))
 
         # YOUR CODE HERE
-
-        return  # YOUR PREDICTED CLASS LABELS
+        y_predict = model(X_clean)
+ 
+        return y_predict
 
     def evaluate_architecture(self):
         """Architecture evaluation utility.
@@ -88,7 +133,14 @@ class ClaimClassifier():
         You can use external libraries such as scikit-learn for this
         if necessary.
         """
-        pass
+        
+        # print("=== Performance of the model on the training data ===")
+        # print(confusion_matrix(self.y_train, self.predict_train))
+        # print(classification_report(self.y_train, self.predict_train))
+
+        # print("=== Performance of the model on the test data ===")
+        # print(confusion_matrix(self.y_test, self.predict_test))
+        # print(classification_report(self.y_test, self.predict_test))
 
     def save_model(self):
         # Please alter this file appropriately to work in tandem with your load_model function below
