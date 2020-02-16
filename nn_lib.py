@@ -235,7 +235,7 @@ class LinearLayer(Layer):
 
         self._grad_W_current = np.dot(self._cache_current, grad_z)
         # CHECK HERE
-        self._grad_b_current = np.dot(np.ones(len(grad_z[0])), grad_z)
+        self._grad_b_current = np.dot(np.ones(self._cache_current.shape[1]), grad_z)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -517,11 +517,6 @@ class Trainer(object):
             # train with each batch
             for n in range (n_batches):
                 outputs = self.network.forward(input_batches[n])
-
-                # CHECK HERE
-                print(outputs)
-                print(target_batches[n])
-
                 loss = self._loss_layer.forward(outputs, target_batches[n])
                 loss_grad = self._loss_layer.backward()
                 gradients = self.network.backward(loss_grad)
