@@ -353,7 +353,7 @@ class MultiLayerNetwork(object):
         #######################################################################
         layer_output = grad_z
         layer_input = None
-        for this_layer in self._layers:
+        for this_layer in reversed(self._layers):
             layer_input = this_layer.backward(layer_output)
             layer_output = layer_input
         return layer_input
