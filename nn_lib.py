@@ -234,6 +234,7 @@ class LinearLayer(Layer):
         #######################################################################
 
         self._grad_W_current = np.dot(self._cache_current, grad_z)
+        # CHECK HERE
         self._grad_b_current = np.dot(np.ones(len(grad_z[0])), grad_z)
 
         #######################################################################
@@ -294,6 +295,7 @@ class MultiLayerNetwork(object):
         input_n = input_dim
         for i in range(len(neurons)):
             self._layers.append(LinearLayer(input_n, neurons[i]))
+            # CHECK HERE: What happens when activations[i] == "identity"?
             if activations[i] == "relu":
                 self._layers.append(ReluLayer())
             elif activations[i] == "sigmoid":
@@ -514,7 +516,6 @@ class Trainer(object):
                 target_batches.append(s_target[i * self.batch_size : (i + 1) * self.batch_size])
             # train with each batch
             for n in range (n_batches):
-                # TODO: replace with eval_loss?
                 outputs = self.network.forward(input_batches[n])
 
                 # CHECK HERE
@@ -625,11 +626,9 @@ class Preprocessor(object):
         #                       ** END OF YOUR CODE **
         #######################################################################
 
-
 def example_main():
     input_dim = 4
-    # neurons = [16, 3]
-    neurons = [16, 2]
+    neurons = [16, 3]
     activations = ["relu", "identity"]
     net = MultiLayerNetwork(input_dim, neurons, activations)
 
