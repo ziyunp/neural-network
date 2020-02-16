@@ -170,7 +170,10 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        self._W = xavier_init(n_in)
+        self._W = []
+        for i in range (n_in):
+            self._W.append(xavier_init(n_out))
+        self._W = np.asarray(self._W)
         self._b = np.zeros(n_out)
 
         self._cache_current = None
@@ -199,8 +202,14 @@ class LinearLayer(Layer):
         #######################################################################
         
         self._cache_current = np.transpose(x)
+
+
+        mmx = np.dot(x, self._W)
+
+        for line in mmx:
+            line = np.add(line, self._b)
         
-        return np.add(np.dot(x, self._W), self._b)
+        return mmx
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -425,7 +434,7 @@ class Trainer(object):
         self._loss_layer = None
         if loss_fun == "mse":
             self._loss_layer = MSELossLayer()
-        elif loss_fun == "bce":
+        elif loss_fun == "cross_entropy":
             self._loss_layer = CrossEntropyLossLayer()
         else:
             print("Error: Loss function must be either 'mse' or 'bce'.")
@@ -507,6 +516,11 @@ class Trainer(object):
             for n in range (n_batches):
                 # TODO: replace with eval_loss?
                 outputs = self.network.forward(input_batches[n])
+
+                # CHECK HERE
+                print(outputs)
+                print(target_batches[n])
+
                 loss = self._loss_layer.forward(outputs, target_batches[n])
                 loss_grad = self._loss_layer.backward()
                 gradients = self.network.backward(loss_grad)
@@ -614,7 +628,8 @@ class Preprocessor(object):
 
 def example_main():
     input_dim = 4
-    neurons = [16, 3]
+    # neurons = [16, 3]
+    neurons = [16, 2]
     activations = ["relu", "identity"]
     net = MultiLayerNetwork(input_dim, neurons, activations)
 
