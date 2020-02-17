@@ -170,9 +170,7 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        self._W = []
-        for i in range (n_in):
-            self._W.append(xavier_init(n_out))
+        self._W = np.stack([xavier_init(n_out) for i in range(n_in)])
         self._W = np.asarray(self._W)
         self._b = np.zeros(n_out)
 
@@ -470,8 +468,8 @@ class Trainer(object):
 
         #######################################################################
         #                       ** END OF YOUR CODE **
-        #######################################################################
-
+        #####################################
+        ###########
     def train(self, input_dataset, target_dataset):
         """
         Main training loop. Performs the following steps `nb_epoch` times:
