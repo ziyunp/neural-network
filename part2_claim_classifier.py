@@ -4,19 +4,20 @@ import pickle
 from nn_lib import *
 
 import torch
+import torchvision.transforms as transforms
 from sklearn.metrics import classification_report, confusion_matrix
 
 class ClaimClassifier(torch.nn.Module):
 
-    def __init__(self):
+    def __init__(self, hidden_size):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
         """
         self.batch_size = 0
-        self.D_in = 10
-        self.H = 5
-        self.D_out = 1
+        self.input_size = 0
+        self.hidden_size = hidden_size
+        self.output_size = 1
 
     def _preprocessor(self, X_raw):
         """Data preprocessing function.
@@ -37,8 +38,9 @@ class ClaimClassifier(torch.nn.Module):
         # YOUR CODE HERE
 
         self.batch_size = X_raw.shape[0]
+        self.input_size = X_raw.shape[1]
 
-        preprocessor = Preprocessor()
+        preprocessor = Preprocessor(X_raw)
 
         return preprocessor.apply(X_raw)
 
@@ -60,16 +62,16 @@ class ClaimClassifier(torch.nn.Module):
             an instance of the fitted model
         """
 
-        if (not y_raw):
-            print("y_raw not provided")
-            return
+        # if (not y_raw):
+        #     print("y_raw not provided")
+        #     return
 
         X_clean = torch.from_numpy(self._preprocessor(X_raw))
 
         model = torch.nn.Sequential(
-            torch.nn.Linear(D_in, H),
+            torch.nn.Linear(self.input_size, self.hidden_size),
             torch.nn.ReLU(),
-            torch.nn.Linear(H, D_out),
+            torch.nn.Linear(self.hidden_size, self.output_size),
         )
 
         loss_fn = torch.nn.MSELoss(reduction='sum')
