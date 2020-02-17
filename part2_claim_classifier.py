@@ -167,3 +167,37 @@ def ClaimClassifierHyperParameterSearch():
     """
 
     return  # Return the chosen hyper parameters
+
+def main():
+    input_dim = 9
+    hidden_layers = 2
+    
+    # drv_age1, vh_age, vh_cyl, vh_din, pol_bonus, vh_sale_begin, vh_sale_end, 
+    # vh_value, vh_speed, claim_amount, made_claim
+    dataset = np.genfromtxt('part2_training_data.csv',delimiter=',',skip_header=1)
+    np.random.shuffle(dataset)
+
+    x = dataset[:, :input_dim]
+    y = dataset[:, input_dim+1:] # not including claim_amount
+
+    split_idx_train = int(0.6 * len(x))
+    split_idx_val = int((0.6 + 0.2) * len(x))
+
+    x_train = x[:split_idx_train]
+    y_train = y[:split_idx_train]
+    x_val = x[split_idx_train:split_idx_val]
+    y_val = y[split_idx_train:split_idx_val]
+    x_test = x[split_idx_val:]
+    y_test = y[split_idx_val:]
+
+    # claim_classifier = ClaimClassifier(hidden_layers)
+
+    # claim_classifier.fit(x_train, y_train)
+
+    # prediction_train = claim_classifier.register_parameter(x_train)
+    # prediction_test = claim_classifier.predict(x_test)
+    
+    # TODO: Evaluation of prediction_train and prediction_test
+
+if __name__ == "__main__":
+    main()
