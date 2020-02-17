@@ -237,6 +237,8 @@ class LinearLayer(Layer):
         # CHECK HERE
         self._grad_b_current = np.dot(np.ones(self._cache_current.shape[1]), grad_z)
 
+        return np.dot(grad_z, np.transpose(self._W))
+
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
