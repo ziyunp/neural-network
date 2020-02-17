@@ -66,7 +66,11 @@ class ClaimClassifier(torch.nn.Module):
         #     print("y_raw not provided")
         #     return
 
+        
         X_clean = torch.from_numpy(self._preprocessor(X_raw))
+        y_raw = torch.from_numpy(y_raw)
+
+        # print(X_clean)
 
         model = torch.nn.Sequential(
             torch.nn.Linear(self.input_size, self.hidden_size),
@@ -80,9 +84,13 @@ class ClaimClassifier(torch.nn.Module):
 
         for t in range(500):
             # Forward pass
-            y_pred = model(X_clean) # X_clean needs to be a tensor
+            y_pred = model(X_clean.float()) # X_clean needs to be a tensor
 
-            loss = loss_fn(y_pred, y_raw)
+            print(y_pred)
+            print(y_raw)
+
+
+            loss = loss_fn(y_pred, y_raw.float())
             if t % 100 == 99:
                 print(t, loss.item())
 
