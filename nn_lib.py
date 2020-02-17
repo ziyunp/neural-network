@@ -302,6 +302,8 @@ class MultiLayerNetwork(object):
                 self._layers.append(ReluLayer())
             elif activations[i] == "sigmoid":
                 self._layers.append(SigmoidLayer())
+            elif activations[i] == "identity":
+                pass
             input_n = neurons[i]
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -627,7 +629,7 @@ class Preprocessor(object):
 def example_main():
     input_dim = 4
     neurons = [16, 3]
-    activations = ["relu", "sigmoid"]
+    activations = ["relu", "identity"]
     net = MultiLayerNetwork(input_dim, neurons, activations)
 
     dat = np.loadtxt("iris.dat")
