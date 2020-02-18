@@ -14,8 +14,9 @@ class ClaimClassifier(torch.nn.Module):
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
         """
+        super(ClaimClassifier, self).__init__()
         self.batch_size = 0
-        self.input_size = 0
+        self.input_size = 9
         self.hidden_size = hidden_size
         self.output_size = 1
 
@@ -65,49 +66,74 @@ class ClaimClassifier(torch.nn.Module):
         # if (not y_raw):
         #     print("y_raw not provided")
         #     return
-
         
-        X_clean = torch.from_numpy(self._preprocessor(X_raw))
-        y_raw = torch.from_numpy(y_raw)
+        X_clean = self._preprocessor(X_raw)
+        # X_clean = torch.from_numpy(self._preprocessor(X_raw))
+        # x_batch = torch.utils.data.DataLoader(X_clean, batch_size=4,
+        #                                   shuffle=False, num_workers=0) # TODO requiring dataset object
+        # y_raw = torch.from_numpy(y_raw)
+        # y_batch = torch.utils.data.DataLoader(y_raw, batch_size=4,
+        #                                   shuffle=False, num_workers=0)
 
         # print(X_clean)
 
-        model = torch.nn.Sequential(
+        self.model = torch.nn.Sequential(     # TODO design a suitable architecture and why are we using sequential?
             torch.nn.Linear(self.input_size, self.hidden_size),
             torch.nn.ReLU(),
             torch.nn.Linear(self.hidden_size, self.output_size),
+            torch.nn.Sigmoid(),
         )
 
         loss_fn = torch.nn.MSELoss(reduction='sum')
 
         learning_rate = 1e-4
 
-        for t in range(500):
-            # Forward pass
-            y_pred = model(X_clean.float()) # X_clean needs to be a tensor
+        for t in range(100):     # TODO epoch not t!
+            running_loss = 0.0
+            x_batch = np.array([X_clean[0]])
+            y_batch = np.array([y_raw[0]])
+            for i in range(1, len(X_clean)):   # TODO after using dataset object, change this
+                if (not i % 8 == 0):
+                    x_batch = np.append(x_batch, [X_clean[i]], axis=0)
+                    y_batch = np.append(y_batch, [y_raw[i]], axis=0)
+                else:
+                    x_batch = torch.from_numpy(x_batch)
+                    y_batch = torch.from_numpy(y_batch)
 
-            print(y_pred)
-            print(y_raw)
+                    # Forward pass
+                    y_pred = self.model(x_batch.float()) # X_clean needs to be a tensor
+
+                    # print(y_pred)
+                    # print(y_raw)
 
 
-            loss = loss_fn(y_pred, y_raw.float())
-            if t % 100 == 99:
-                print(t, loss.item())
+                    loss = loss_fn(y_pred, y_batch.float())
+                    running_loss += loss.item()
+                    if i % 800 == 0:    # print every 2000 mini-batches
+                        print('[%d, %5d] loss: %.3f' %
+                            (t, i, running_loss / 800))
+                        running_loss = 0.0
 
-            # Zero the gradients before running the backward pass.
-            model.zero_grad()
+                    # Zero the gradients before running the backward pass.
+                    self.model.zero_grad()
 
-            # Backward pass
-            loss.backward()
+                    # Backward pass
+                    loss.backward()
 
-            with torch.no_grad():
-                for param in model.parameters():
-                    param -= learning_rate * param.grad
+                    with torch.no_grad():
+                        for param in self.model.parameters():
+                            param -= learning_rate * param.grad
 
-        self.model = model
+                    x_batch = np.array([X_clean[i]])
+                    y_batch = np.array([y_raw[i]])
 
-        return model
+        # self = model
+
+        return self
         
+    def forward(self, x):
+        return self.model(x)
+
     def predict(self, X_raw):
         """Classifier probability prediction function.
 
@@ -130,7 +156,7 @@ class ClaimClassifier(torch.nn.Module):
         X_clean = torch.from_numpy(self._preprocessor(X_raw))
 
         # YOUR CODE HERE
-        y_predict = model(X_clean)
+        y_predict = self.model(X_clean.float())
  
         return y_predict
 
@@ -178,7 +204,7 @@ def ClaimClassifierHyperParameterSearch():
 
 def main():
     input_dim = 9
-    hidden_layers = 2
+    hidden_layers = 16
     
     # drv_age1, vh_age, vh_cyl, vh_din, pol_bonus, vh_sale_begin, vh_sale_end, 
     # vh_value, vh_speed, claim_amount, made_claim
@@ -198,14 +224,28 @@ def main():
     x_test = x[split_idx_val:]
     y_test = y[split_idx_val:]
 
-    # claim_classifier = ClaimClassifier(hidden_layers)
+    claim_classifier = ClaimClassifier(hidden_layers)
 
-    # claim_classifier.fit(x_train, y_train)
+    claim_classifier.fit(x_train, y_train)
 
     # prediction_train = claim_classifier.register_parameter(x_train)
     # prediction_test = claim_classifier.predict(x_test)
-    
+    prediction_val = claim_classifier.predict(x_val)
+
     # TODO: Evaluation of prediction_train and prediction_test
+    preds = np.squeeze(prediction_val.detach().numpy())
+    with np.nditer(preds, op_flags=['readwrite']) as it:
+        for x in it:
+            if x < 0.5:
+                x[...] = 0
+            else:
+                x[...] = 1
+    targets = np.squeeze(y_val)
+    accuracy = (preds == targets).mean()
+    print(preds)
+    print(targets)
+    print("Validation accuracy: {}".format(accuracy))
+    
 
 if __name__ == "__main__":
     main()
