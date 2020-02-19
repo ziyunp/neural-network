@@ -15,7 +15,7 @@ from claim_net import *
 
 class ClaimClassifier():
 
-    def __init__(self, input_dim, neurons, activations, loss_func, optimiser, epoch):
+    def __init__(self, input_dim, neurons, activations, loss_func, optimiser, learning_rate, epoch):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
@@ -25,12 +25,13 @@ class ClaimClassifier():
 
         if loss_func == "bce":
             self._loss_func = nn.BCELoss() 
-        if loss_func == "mse":
+        elif loss_func == "mse":
             self._loss_func = nn.MSELoss()
-        if loss_func == "cross_entropy":
+        elif loss_func == "cross_entropy":
             self._loss_func = nn.CrossEntropyLoss()
 
-        self._optimiser = optim.SGD()
+        if optimiser == "sgd":
+            self._optimiser = optim.SGD(self._net.parameters(), learning_rate)
 
 
     def _preprocessor(self, X_raw):
@@ -84,6 +85,9 @@ class ClaimClassifier():
                 # Backprop
                 self._net.zero_grad()
                 loss.backward()
+
+                # Optimise
+                self._optimiser.step()
         
     def predict(self, X_raw):
         """Classifier probability prediction function.
@@ -174,7 +178,10 @@ def main():
     neurons = [18, 1]
     activations = ["relu", "sigmoid"]
     loss_fun = "bse"
-    claim_classifier = ClaimClassifier(input_dim, neurons, activations, loss_fun)
+    optimiser = "sgd"
+    learning_rate = 0.01
+    epoch = 2
+    claim_classifier = ClaimClassifier(input_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch)
 
     # Train the network
     claim_classifier.fit(x_train, y_train)
