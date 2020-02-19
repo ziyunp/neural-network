@@ -8,9 +8,10 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 import torch.nn.functional as F
 from sklearn.preprocessing import normalize
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
 
-class ClaimClassifier():
+class ClaimClassifier(torch.nn.Module):
 
     def __init__(self, input_dim, neurons, activations, train):
         """
@@ -20,6 +21,7 @@ class ClaimClassifier():
         activations {list} -- List of the activation function to use for
             each layer.
         """
+        super(ClaimClassifier, self).__init__()
         self._layers = []
         self.input_dim = input_dim
         self.train_config = train
@@ -155,7 +157,12 @@ class ClaimClassifier():
         You can use external libraries such as scikit-learn for this
         if necessary.
         """
-        return accuracy_score(prediction, annotation)
+
+        print("=== Confusion Matrix ===")
+        print(confusion_matrix(annotation, prediction))
+
+        print("=== Classification Report ===")
+        print(classification_report(annotation, prediction))
         
 
     def save_model(self):
@@ -170,7 +177,7 @@ def load_model():
         trained_model = pickle.load(target)
     return trained_model
 
-# ENSURE TO ADD IN WHATEVER INPUTS YOU DEEM NECESSARRY TO THIS FUNCTION
+# ENSURE TO ADDdrv_age1,vh_age,vh_cyl,vh_din,pol_bonus,vh_sale_begin,vh_sale_end,vh_value,vh_speed,claim IN WHATEVER INPUTS YOU DEEM NECESSARRY TO THIS FUNCTION
 def ClaimClassifierHyperParameterSearch():
     """Performs a hyper-parameter for fine-tuning the classifier.
 
@@ -202,9 +209,9 @@ def main():
 
     # Params for training:
     train = { 
-        "batch_size": 8,
-        "nb_epoch": 2,
-        "learning_rate": 0.01,
+        "batch_size": 128,
+        "nb_epoch": 10,
+        "learning_rate": 0.001,
         "loss_fun": "bce",
         "shuffle_flag": True
     }
@@ -237,7 +244,11 @@ def main():
     
     # prediction_train = claim_classifier.register_parameter(x_train)
     y_pred = net.predict(x_test)
-    print(net.evaluate_architecture(y_pred, y_test))
+    y_pred_binary = binary_conv(y_pred, 0.5)
+    print(y_pred)
+    # print([data for data in y_pred if data >= 0.5])
+    # print([data for data in y_pred_binary if data == 1])
+    net.evaluate_architecture(y_pred_binary, y_test)
     # TODO: Evaluation of prediction_train and prediction_test
 
 if __name__ == "__main__":
