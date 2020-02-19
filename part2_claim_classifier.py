@@ -103,10 +103,10 @@ class ClaimClassifier():
         # Prepare dataset for training
         targets = np.array([t for t in y_raw])
         dataset = np.append(X_clean, targets, axis=1)
-        mini_batches = torch.utils.data.DataLoader(dataset, batch_size = batch_size, shuffle=shuffle)
         optimiser = optim.Adam(self.model.parameters(), lr=learning_rate)
 
         for epoch in range(n_epochs):
+            mini_batches = torch.utils.data.DataLoader(dataset, batch_size = batch_size, shuffle=shuffle)
             for data in mini_batches:
                 X = data[:, :self.input_dim]
                 y = data[:, self.input_dim:]
