@@ -136,7 +136,7 @@ class ClaimClassifier():
 
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
         X_clean = self._preprocessor(X_raw)
-        y_pred = self.model(X_clean.float())
+        y_pred = self.model(torch.from_numpy(X_clean).float())
         return  y_pred # YOUR PREDICTED CLASS LABELS
 
     def evaluate_architecture(self, prediction, annotation):
@@ -175,6 +175,17 @@ def ClaimClassifierHyperParameterSearch():
 
     return  # Return the chosen hyper parameters
 
+def binary_conv(predictions, split_value):
+    predictions_binary = []
+
+    for i in range (len(predictions)):
+        if (predictions[i] < split_value):
+            predictions_binary.append(0)
+        else:
+            predictions_binary.append(1)
+    return np.asarray(predictions_binary)
+
+
 def main():
     input_dim = 9
     # hidden_layers = 2
@@ -185,7 +196,7 @@ def main():
     # Params for training:
     train = { 
         "batch_size": 8,
-        "nb_epoch": 1000,
+        "nb_epoch": 2,
         "learning_rate": 0.01,
         "loss_fun": "bce",
         "shuffle_flag": True
@@ -218,8 +229,9 @@ def main():
     net.fit(x_train, y_train)
     
     # prediction_train = claim_classifier.register_parameter(x_train)
-    y_pred = net.predict(x_test)
-    print(net.evaluate_architecture(y_pred, y_test))
+    y_pred = net.predict(x_test).detach().numpy()
+    y_pred_binary = binary_conv(y_pred, 0.5)
+    print(net.evaluate_architecture(y_pred_binary, y_test))
     # TODO: Evaluation of prediction_train and prediction_test
 
 if __name__ == "__main__":
