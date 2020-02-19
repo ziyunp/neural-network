@@ -13,6 +13,8 @@ class ClaimDataset(Dataset):
         Args:
             csv_file (string): Path to the csv file of raw data. 
         """
+        # drv_age1, vh_age, vh_cyl, vh_din, pol_bonus, vh_sale_begin, vh_sale_end, 
+        # vh_value, vh_speed, claim_amount, made_claim
         self.dataset = np.genfromtxt(csv_file, delimiter=',', skip_header=1)
 
     def __len__(self):
