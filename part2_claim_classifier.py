@@ -3,6 +3,7 @@ import pickle
 
 import torch
 import torch.nn as nn
+import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from sklearn.preprocessing import normalize
@@ -14,7 +15,7 @@ from claim_net import *
 
 class ClaimClassifier():
 
-    def __init__(self, input_dim, neurons, activations, loss_func, epoch):
+    def __init__(self, input_dim, neurons, activations, loss_func, optimiser, epoch):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
@@ -28,6 +29,8 @@ class ClaimClassifier():
             self._loss_func = nn.MSELoss()
         if loss_func == "cross_entropy":
             self._loss_func = nn.CrossEntropyLoss()
+
+        self._optimiser = optim.SGD()
 
 
     def _preprocessor(self, X_raw):
@@ -69,12 +72,18 @@ class ClaimClassifier():
         dataset = ClaimDataset(self._preprocessor(X_raw), y_raw)
         dataset_loader = DataLoader(dataset, batch_size=8, shuffle=True)
         
-        # Forward
+        # Training
         for _ in range(self._epoch):
-            pass
+            for x_batch, y_batch in dataset_loader:
+                # Forward
+                output = self._net(x_batch)
 
-        # Loss
-        loss = self._loss_func(y_raw)
+                # Loss
+                loss = self._loss_func(y_raw)
+
+                # Backprop
+                self._net.zero_grad()
+                loss.backward()
         
     def predict(self, X_raw):
         """Classifier probability prediction function.
