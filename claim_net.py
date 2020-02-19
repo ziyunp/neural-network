@@ -2,7 +2,6 @@ import numpy as np
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 class ClaimNet(nn.Module):
 
@@ -29,8 +28,9 @@ class ClaimNet(nn.Module):
         #     n_inputs = neurons[i]  
 
         self._ll1 = nn.Linear(input_dim, neurons[0])
+        self._sigmoid1 = nn.Sigmoid()
         self._ll2 = nn.Linear(neurons[0], neurons[1])
-        self._ll3 = nn.Linear(neurons[1], neurons[2])
+        self._sigmoid2 = nn.Sigmoid()
 
 
     def forward(self, x):
@@ -41,8 +41,9 @@ class ClaimNet(nn.Module):
         # for layer in self._layers:
         #     x = layer(x)
 
-        x = F.relu(self._ll1(x))
-        x = F.relu(self._ll2(x))
-        x = torch.sigmoid(self._ll3(x))
+        x = self._ll1(x)
+        x = self._sigmoid1(x)
+        x = self._ll2(x)
+        x = self._sigmoid2(x)
 
         return x
