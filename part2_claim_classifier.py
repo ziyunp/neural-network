@@ -57,8 +57,11 @@ class ClaimClassifier():
         self: (optional)
             an instance of the fitted model
         """
-        # TODO
-        pass
+        # Create a dataset
+        dataset = ClaimDataset(np.append(self._preprocessor(X_raw), y_raw, 1))
+        
+        # Forward
+        
         
     def predict(self, X_raw):
         """Classifier probability prediction function.
@@ -151,7 +154,8 @@ def main():
     loss_fun = "bse"
     claim_classifier = ClaimClassifier(input_dim, neurons, activations, loss_fun)
 
-    # claim_classifier.fit(x_train, y_train)
+    # Train the network
+    claim_classifier.fit(x_train, y_train)
 
     # prediction_train = claim_classifier.register_parameter(x_train)
     # prediction_test = claim_classifier.predict(x_test)
