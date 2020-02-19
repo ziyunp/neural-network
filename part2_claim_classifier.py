@@ -8,14 +8,11 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 import torch.nn.functional as F
 from sklearn.preprocessing import normalize
+from sklearn.metrics import accuracy_score
 
 class ClaimClassifier():
 
     def __init__(self, input_dim, neurons, activations, train):
-        """
-        Feel free to alter this as you wish, adding instance variables as
-        necessary. 
-        """
         """
         input_dim {int} -- Dimension of input (excluding batch dimension).
         neurons {list} -- Number of neurons in each layer represented as a
@@ -24,6 +21,9 @@ class ClaimClassifier():
             each layer.
         """
         self._layers = []
+        self.input_dim = input_dim
+        self.train_config = train
+
         n_inputs = input_dim
         for i in range(len(neurons)):
             self._layers.append(nn.Linear(n_inputs, neurons[i]))
@@ -36,15 +36,11 @@ class ClaimClassifier():
             elif activations[i] == "tanh":
                 self._layers.append(nn.Tanh())
             n_inputs = neurons[i]  
-
-        self.train_config = train
-        self._model = nn.Sequential(*self._layers)
+        
+        self.model = nn.Sequential(*self._layers)
         
     def forward(self, x):
-        # move to function that calls forward
-        x = torch.Tensor(x)
-        y = self._model(x)
-        return y
+        return self.model(x)
         
 
     def _preprocessor(self, X_raw):
@@ -63,9 +59,17 @@ class ClaimClassifier():
         ndarray
             A clean data set that is used for training and prediction.
         """
-        # YOUR CODE HERE
-        return normalize(X_raw, axis=0)
-        # YOUR CLEAN DATA AS A NUMPY ARRAY
+        # DECISION: which norm
+        return normalize(X_raw, norm='max', axis=0) # YOUR CLEAN DATA AS A NUMPY ARRAY
+    
+    def calc_loss(self, prediction, annotation, loss_fun):
+        if loss_fun == "bce":
+            return F.binary_cross_entropy(prediction, annotation) 
+        if loss_fun == "mse":
+            return F.mse_loss(prediction, annotation)
+        if loss_fun == "cross_entropy":
+            return F.cross_entropy(prediction, annotation)
+        return F.mse_loss(prediction, annotation)
 
     def fit(self, X_raw, y_raw):
         """Classifier training function.
@@ -86,9 +90,31 @@ class ClaimClassifier():
         """
 
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
-        # X_clean = self._preprocessor(X_raw)
-        # YOUR CODE HERE
-        pass
+        X_clean = self._preprocessor(X_raw)
+        # training configs
+        learning_rate = self.train_config["learning_rate"]
+        loss_fun = self.train_config["loss_fun"]
+        n_epochs = self.train_config["nb_epoch"]
+        batch_size = self.train_config["batch_size"]
+        shuffle = False
+        if self.train_config["shuffle_flag"]:
+            shuffle = True
+        
+        # Prepare dataset for training
+        targets = np.array([t for t in y_raw])
+        dataset = np.append(X_clean, targets, axis=1)
+        mini_batches = torch.utils.data.DataLoader(dataset, batch_size = batch_size, shuffle=shuffle)
+        optimiser = optim.Adam(self.model.parameters(), lr=learning_rate)
+
+        for epoch in range(n_epochs):
+            for data in mini_batches:
+                X = data[:, :self.input_dim]
+                y = data[:, self.input_dim:]
+                self.model.zero_grad()
+                y_pred = self.forward(X.float())
+                loss = self.calc_loss(y_pred, y.float(), loss_fun)
+                loss.backward()
+                optimiser.step()
 
     def predict(self, X_raw):
         """Classifier probability prediction function.
@@ -109,13 +135,11 @@ class ClaimClassifier():
         """
 
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
-        # X_clean = self._preprocessor(X_raw)
+        X_clean = self._preprocessor(X_raw)
+        y_pred = self.model(X_clean.float())
+        return  y_pred # YOUR PREDICTED CLASS LABELS
 
-        # YOUR CODE HERE
-
-        return  # YOUR PREDICTED CLASS LABELS
-
-    def evaluate_architecture(self):
+    def evaluate_architecture(self, prediction, annotation):
         """Architecture evaluation utility.
 
         Populate this function with evaluation utilities for your
@@ -124,7 +148,8 @@ class ClaimClassifier():
         You can use external libraries such as scikit-learn for this
         if necessary.
         """
-        pass
+        return accuracy_score(prediction, annotation)
+        
 
     def save_model(self):
         # Please alter this file appropriately to work in tandem with your load_model function below
@@ -162,6 +187,7 @@ def main():
         "batch_size": 8,
         "nb_epoch": 1000,
         "learning_rate": 0.01,
+        "loss_fun": "bce",
         "shuffle_flag": True
     }
 
@@ -186,14 +212,14 @@ def main():
     x_test = x[split_idx_val:]
     y_test = y[split_idx_val:]
 
-    net._preprocessor(x_train)
+    # net._preprocessor(x_train)
     # claim_classifier = ClaimClassifier(hidden_layers)
 
-    # claim_classifier.fit(x_train, y_train)
-
-    # prediction_train = claim_classifier.register_parameter(x_train)
-    # prediction_test = claim_classifier.predict(x_test)
+    net.fit(x_train, y_train)
     
+    # prediction_train = claim_classifier.register_parameter(x_train)
+    y_pred = net.predict(x_test)
+    print(net.evaluate_architecture(y_pred, y_test))
     # TODO: Evaluation of prediction_train and prediction_test
 
 if __name__ == "__main__":
