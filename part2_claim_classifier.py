@@ -80,7 +80,7 @@ class ClaimClassifier():
                 output = self._net(x_batch)
 
                 # Loss
-                loss = self._loss_func(y_raw)
+                loss = self._loss_func(output, y_batch)
 
                 # Backprop
                 self._net.zero_grad()
@@ -177,7 +177,7 @@ def main():
     input_dim = 9
     neurons = [18, 1]
     activations = ["relu", "sigmoid"]
-    loss_fun = "bse"
+    loss_fun = "bce"
     optimiser = "sgd"
     learning_rate = 0.01
     epoch = 2
