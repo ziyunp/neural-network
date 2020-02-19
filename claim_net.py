@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 class ClaimNet(nn.Module):
 
-    def __init__(self, input_dim, neurons, activations, loss_fun):
+    def __init__(self, input_dim, neurons, activations):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
