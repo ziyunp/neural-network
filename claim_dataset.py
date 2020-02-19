@@ -26,7 +26,7 @@ class ClaimDataset(Dataset):
         if torch.is_tensor(index):
             index = index.tolist()
 
-        ret_attributes = self._attributes[index]
-        ret_labels = self._labels[index]
+        ret_attributes = torch.from_numpy(self._attributes[index]).float()
+        ret_labels = torch.from_numpy(self._labels[index]).float()
 
         return ret_attributes, ret_labels
