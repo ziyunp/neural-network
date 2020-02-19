@@ -146,7 +146,7 @@ class ClaimClassifier(torch.nn.Module):
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
         X_clean = self._preprocessor(X_raw)
         y_pred = self.model(torch.from_numpy(X_clean).float())
-        return binary_conv(y_pred, self.threshold) # YOUR PREDICTED CLASS LABELS
+        return self.binary_conv(y_pred) # YOUR PREDICTED CLASS LABELS
 
     def evaluate_architecture(self, prediction, annotation):
         """Architecture evaluation utility.
@@ -169,6 +169,16 @@ class ClaimClassifier(torch.nn.Module):
         # Please alter this file appropriately to work in tandem with your load_model function below
         with open('part2_claim_classifier.pickle', 'wb') as target:
             pickle.dump(self, target)
+    
+    def binary_conv(self, predictions):
+        predictions_binary = []
+
+        for i in range (len(predictions)):
+            if (predictions[i] < self.threshold):
+                predictions_binary.append(0)
+            else:
+                predictions_binary.append(1)
+        return np.asarray(predictions_binary)
 
 
 def load_model():
@@ -188,16 +198,6 @@ def ClaimClassifierHyperParameterSearch():
     """
 
     return  # Return the chosen hyper parameters
-
-def binary_conv(predictions, split_value):
-    predictions_binary = []
-
-    for i in range (len(predictions)):
-        if (predictions[i] < split_value):
-            predictions_binary.append(0)
-        else:
-            predictions_binary.append(1)
-    return np.asarray(predictions_binary)
 
 
 def main():
@@ -244,11 +244,9 @@ def main():
     
     # prediction_train = claim_classifier.register_parameter(x_train)
     y_pred = net.predict(x_test)
-    y_pred_binary = binary_conv(y_pred, 0.5)
     print(y_pred)
-    # print([data for data in y_pred if data >= 0.5])
-    # print([data for data in y_pred_binary if data == 1])
-    net.evaluate_architecture(y_pred_binary, y_test)
+    
+    net.evaluate_architecture(y_pred, y_test)
     # TODO: Evaluation of prediction_train and prediction_test
 
 if __name__ == "__main__":
