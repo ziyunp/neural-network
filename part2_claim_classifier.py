@@ -11,7 +11,7 @@ from sklearn.preprocessing import normalize
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 
-class ClaimClassifier(torch.nn.Module):
+class ClaimClassifier():
 
     def __init__(self, input_dim, neurons, activations, train):
         """
@@ -21,7 +21,6 @@ class ClaimClassifier(torch.nn.Module):
         activations {list} -- List of the activation function to use for
             each layer.
         """
-        super(ClaimClassifier, self).__init__()
         self._layers = []
         self.input_dim = input_dim
         self.train_config = train
