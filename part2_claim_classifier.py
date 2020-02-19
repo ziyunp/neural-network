@@ -152,7 +152,7 @@ class ClaimClassifier():
         return np.asarray(predictions_binary)
 
 
-    def evaluate_architecture(self):
+    def evaluate_architecture(self, prediction, annotation):
         """Architecture evaluation utility.
 
         Populate this function with evaluation utilities for your
@@ -162,13 +162,12 @@ class ClaimClassifier():
         if necessary.
         """
         
-        # print("=== Performance of the model on the training data ===")
-        # print(confusion_matrix(self.y_train, self.predict_train))
-        # print(classification_report(self.y_train, self.predict_train))
+        print("=== Confusion Matrix ===")
+        print(confusion_matrix(annotation, prediction))
 
-        # print("=== Performance of the model on the test data ===")
-        # print(confusion_matrix(self.y_test, self.predict_test))
-        # print(classification_report(self.y_test, self.predict_test))
+        print("=== Classification Report ===")
+        print(classification_report(annotation, prediction))
+
 
     def save_model(self):
         # Please alter this file appropriately to work in tandem with your load_model function below
@@ -227,11 +226,11 @@ def main():
     claim_classifier.fit(x_train, y_train)
 
     #Predict
-    prediction_val = claim_classifier.predict(x_train)
-    print([data for data in prediction_val if data == 1])
+    prediction_val = claim_classifier.predict(x_val)
+    # print([data for data in prediction_val if data == 1])
     # prediction_test = claim_classifier.predict(x_test)
     
-    # TODO: Evaluation of prediction_train and prediction_test
+    claim_classifier.evaluate_architecture(prediction_val, y_val)
 
 if __name__ == "__main__":
     main()
