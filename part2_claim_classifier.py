@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
+from sklearn.preprocessing import normalize
 from sklearn.metrics import classification_report, confusion_matrix
 
 # customised classes
@@ -37,8 +38,7 @@ class ClaimClassifier():
         ndarray
             A clean data set that is used for training and prediction.
         """
-        # YOUR CODE HERE
-        # TODO
+        return normalize(X_raw, norm='max', axis=0)
 
     def fit(self, X_raw, y_raw):
         """Classifier training function.
