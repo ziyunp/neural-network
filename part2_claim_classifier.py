@@ -15,7 +15,7 @@ from claim_net import *
 
 class ClaimClassifier():
 
-    def __init__(self, input_dim, neurons, activations, loss_func, optimiser, learning_rate, epoch):
+    def __init__(self, input_dim, neurons, activations, loss_func, optimiser, learning_rate, epoch, batch_size):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
@@ -26,6 +26,7 @@ class ClaimClassifier():
         print()
         self._epoch = epoch
         self._normaliser = None
+        self._batch_size = batch_size
 
         if loss_func == "bce":
             self._loss_func = nn.BCELoss() 
@@ -85,7 +86,7 @@ class ClaimClassifier():
         """
         # Create a dataset loader
         dataset = ClaimDataset(self._preprocessor(X_raw), y_raw)
-        dataset_loader = DataLoader(dataset, batch_size=100, shuffle=True)
+        dataset_loader = DataLoader(dataset, batch_size=10, shuffle=True)
         
         # Training
         pri = False
@@ -101,7 +102,7 @@ class ClaimClassifier():
                     print("The 1st should be Loss function:   ", loss.grad_fn)
                     print("The 2nd should be the sigmoid:     ", loss.grad_fn.next_functions[0][0])
                     print("The 3rd should be the liner layer: ", loss.grad_fn.next_functions[0][0].next_functions[0][0])
-                    print("The 4th should be the relu:        ", loss.grad_fn.next_functions[0][0].next_functions[0][0].next_functions[0][0])
+                    print("The 4th should be the sigmoid:     ", loss.grad_fn.next_functions[0][0].next_functions[0][0].next_functions[0][0])
                     print()
                     pri = True
 
@@ -214,23 +215,23 @@ def main():
 
     # Create a network
     input_dim = 9
-    neurons = [19, 9, 1]
-    activations = ["relu", "sigmoid"]
+    neurons = [4, 1]
+    activations = ["sigmoid", "sigmoid"]
     loss_fun = "bce"
     optimiser = "sgd"
-    learning_rate = 0.0001
-    epoch = 2
-    claim_classifier = ClaimClassifier(input_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch)
+    learning_rate = 0.01
+    epoch = 700
+    batch_size = 10
+    claim_classifier = ClaimClassifier(input_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
 
     # Train the network
     claim_classifier.fit(x_train, y_train)
 
     #Predict
     prediction_val = claim_classifier.predict(x_val)
-    # print([data for data in prediction_val if data == 1])
     # prediction_test = claim_classifier.predict(x_test)
     
-    claim_classifier.evaluate_architecture(prediction_val, y_val)
+    claim_classifier.evaluate_architecture(prediction_val.squeeze(), y_val)
 
 if __name__ == "__main__":
     main()
