@@ -37,6 +37,13 @@ class ClaimClassifier():
                 self._layers.append(nn.Tanh())
             n_inputs = neurons[i]  
         
+        if activations[-1] == "sigmoid":
+            self.threshold = 0.5
+        elif activations[-1] == "tanh":
+            self.threshold = 0
+        else:
+            print("Only sigmoid and tanh is acceptable as an activation function of the output layer.")
+        
         self.model = nn.Sequential(*self._layers)
         
     def forward(self, x):
@@ -137,8 +144,7 @@ class ClaimClassifier():
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
         X_clean = self._preprocessor(X_raw)
         y_pred = self.model(torch.from_numpy(X_clean).float())
-        threshold = 0.5
-        return binary_conv(y_pred, threshold) # YOUR PREDICTED CLASS LABELS
+        return binary_conv(y_pred, self.threshold) # YOUR PREDICTED CLASS LABELS
 
     def evaluate_architecture(self, prediction, annotation):
         """Architecture evaluation utility.
@@ -192,7 +198,6 @@ def main():
     # hidden_layers = 2
     # Params for layers:
     neurons = [10, 10, 1] 
-    # NOTE: Do not use softmax when there's only one output neuron
     activations = ["relu", "relu", "sigmoid"]
 
     # Params for training:
