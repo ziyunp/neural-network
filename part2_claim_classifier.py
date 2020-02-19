@@ -1,15 +1,51 @@
 import numpy as np
 import pickle
 
+import torch
+import torchvision
+import torch.nn as nn
+import torch.optim as optim
+import torchvision.transforms as transforms
+import torch.nn.functional as F
+from sklearn.preprocessing import normalize
 
 class ClaimClassifier():
 
-    def __init__(self,):
+    def __init__(self, input_dim, neurons, activations, train):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
         """
-        pass
+        """
+        input_dim {int} -- Dimension of input (excluding batch dimension).
+        neurons {list} -- Number of neurons in each layer represented as a
+            list (the length of the list determines the number of layers).
+        activations {list} -- List of the activation function to use for
+            each layer.
+        """
+        self._layers = []
+        n_inputs = input_dim
+        for i in range(len(neurons)):
+            self._layers.append(nn.Linear(n_inputs, neurons[i]))
+            if activations[i] == "relu":
+                self._layers.append(nn.ReLU())
+            elif activations[i] == "sigmoid":
+                self._layers.append(nn.Sigmoid())
+            elif activations[i] == "softmax":
+                self._layers.append(nn.Softmax())
+            elif activations[i] == "tanh":
+                self._layers.append(nn.Tanh())
+            n_inputs = neurons[i]  
+
+        self.train_config = train
+        self._model = nn.Sequential(*self._layers)
+        
+    def forward(self, x):
+        # move to function that calls forward
+        x = torch.Tensor(x)
+        y = self._model(x)
+        return y
+        
 
     def _preprocessor(self, X_raw):
         """Data preprocessing function.
@@ -28,8 +64,8 @@ class ClaimClassifier():
             A clean data set that is used for training and prediction.
         """
         # YOUR CODE HERE
-
-        return  # YOUR CLEAN DATA AS A NUMPY ARRAY
+        return normalize(X_raw, axis=0)
+        # YOUR CLEAN DATA AS A NUMPY ARRAY
 
     def fit(self, X_raw, y_raw):
         """Classifier training function.
@@ -113,3 +149,52 @@ def ClaimClassifierHyperParameterSearch():
     """
 
     return  # Return the chosen hyper parameters
+
+def main():
+    input_dim = 9
+    # hidden_layers = 2
+    # Params for layers:
+    neurons = [10, 10, 1] 
+    activations = ["relu", "relu", "sigmoid"]
+
+    # Params for training:
+    train = { 
+        "batch_size": 8,
+        "nb_epoch": 1000,
+        "learning_rate": 0.01,
+        "shuffle_flag": True
+    }
+
+    net = ClaimClassifier(input_dim, neurons, activations, train)
+
+    dataset = np.genfromtxt('part2_training_data.csv',delimiter=',',skip_header=1)
+    np.random.shuffle(dataset)
+
+    # drv_age1, vh_age, vh_cyl, vh_din, pol_bonus, vh_sale_begin, vh_sale_end, 
+    # vh_value, vh_speed, claim_amount, made_claim
+
+    x = dataset[:, :input_dim]
+    y = dataset[:, input_dim+1:] # not including claim_amount 
+
+    split_idx_train = int(0.6 * len(x))
+    split_idx_val = int((0.6 + 0.2) * len(x))
+
+    x_train = x[:split_idx_train]
+    y_train = y[:split_idx_train]
+    x_val = x[split_idx_train:split_idx_val]
+    y_val = y[split_idx_train:split_idx_val]
+    x_test = x[split_idx_val:]
+    y_test = y[split_idx_val:]
+
+    net._preprocessor(x_train)
+    # claim_classifier = ClaimClassifier(hidden_layers)
+
+    # claim_classifier.fit(x_train, y_train)
+
+    # prediction_train = claim_classifier.register_parameter(x_train)
+    # prediction_test = claim_classifier.predict(x_test)
+    
+    # TODO: Evaluation of prediction_train and prediction_test
+
+if __name__ == "__main__":
+    main()
