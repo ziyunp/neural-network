@@ -128,14 +128,21 @@ def ClaimClassifierHyperParameterSearch():
 def main():
     
     # Read the dataset
-    dataset = ClaimDataset('part2_training_data.csv')
+    dataset = np.genfromtxt('part2_training_data.csv', delimiter=',', skip_header=1)
+    np.random.shuffle(dataset)
+
+    x = dataset[:, :9]
+    y = dataset[:, 10:] # not including claim_amount 
 
     split_idx_train = int(0.6 * len(dataset))
     split_idx_val = int((0.6 + 0.2) * len(dataset))
 
-    dataset_train = dataset[:split_idx_train]
-    dataset_val = dataset[:split_idx_train]
-    dataset_test = dataset[split_idx_val:]
+    x_train = x[:split_idx_train]
+    y_train = y[:split_idx_train]
+    x_val = x[split_idx_train:split_idx_val]
+    y_val = y[split_idx_train:split_idx_val]
+    x_test = x[split_idx_val:]
+    y_test = y[split_idx_val:]
 
     # Create a network
     input_dim = 9
