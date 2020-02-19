@@ -462,10 +462,12 @@ class Trainer(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        np.random.shuffle(input_dataset)
-        np.random.shuffle(target_dataset)
+        data_len = input_dataset.shape[1]
+        targets = np.array([t for t in target_dataset])
+        inputs = np.append(input_dataset, targets, axis=1)
+        np.random.shuffle(inputs)
+        return (inputs[:,:data_len], inputs[:, data_len:])
 
-        return (input_dataset, target_dataset)
 
 
         #######################################################################
