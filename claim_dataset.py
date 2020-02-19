@@ -16,6 +16,7 @@ class ClaimDataset(Dataset):
         # drv_age1, vh_age, vh_cyl, vh_din, pol_bonus, vh_sale_begin, vh_sale_end, 
         # vh_value, vh_speed, claim_amount, made_claim
         self.dataset = np.genfromtxt(csv_file, delimiter=',', skip_header=1)
+        np.random.shuffle(self.dataset)
 
     def __len__(self):
         return len(self.dataset)
