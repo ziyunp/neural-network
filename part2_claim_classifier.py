@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from sklearn.preprocessing import normalize
+from sklearn.preprocessing import normalize, Normalizer
 from sklearn.metrics import classification_report, confusion_matrix
 
 # customised classes
@@ -22,6 +22,7 @@ class ClaimClassifier():
         """
         self._net = ClaimNet(input_dim, neurons, activations)
         self._epoch = epoch
+        self._normaliser = None
 
         if loss_func == "bce":
             self._loss_func = nn.BCELoss() 
@@ -50,7 +51,13 @@ class ClaimClassifier():
         ndarray
             A clean data set that is used for training and prediction.
         """
-        return normalize(X_raw, norm='max', axis=0)
+        X_raw = np.transpose(X_raw)
+        if self._normaliser == None:
+            self._normaliser = Normalizer(norm='max')
+            self._normaliser.fit(X_raw)
+        X_raw = self._normaliser.transform(X_raw)
+
+        return np.transpose(X_raw)
 
     def fit(self, X_raw, y_raw):
         """Classifier training function.
@@ -108,9 +115,9 @@ class ClaimClassifier():
         """
 
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
-        X_clean = torch.from_numpy(self._preprocessor(X_raw))
+        X_clean = torch.from_numpy(self._preprocessor(X_raw)).float()
 
-        pass
+        return self._net(x_batch)
 
     def evaluate_architecture(self):
         """Architecture evaluation utility.
