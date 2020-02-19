@@ -1,23 +1,23 @@
 import numpy as np
 import pickle
 
-from nn_lib import *
-
 import torch
+from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 from sklearn.metrics import classification_report, confusion_matrix
 
+# customised classes
+from claim_dataset import *
+
 class ClaimClassifier(torch.nn.Module):
 
-    def __init__(self, hidden_size):
+    def __init__(self):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
         """
-        self.batch_size = 0
-        self.input_size = 0
-        self.hidden_size = hidden_size
-        self.output_size = 1
+        super(ClaimClassifier, self).__init__()
+        
 
     def _preprocessor(self, X_raw):
         """Data preprocessing function.
@@ -36,13 +36,7 @@ class ClaimClassifier(torch.nn.Module):
             A clean data set that is used for training and prediction.
         """
         # YOUR CODE HERE
-
-        self.batch_size = X_raw.shape[0]
-        self.input_size = X_raw.shape[1]
-
-        preprocessor = Preprocessor(X_raw)
-
-        return preprocessor.apply(X_raw)
+        # TODO
 
     def fit(self, X_raw, y_raw):
         """Classifier training function.
@@ -61,44 +55,8 @@ class ClaimClassifier(torch.nn.Module):
         self: (optional)
             an instance of the fitted model
         """
-
-        # if (not y_raw):
-        #     print("y_raw not provided")
-        #     return
-
-        X_clean = torch.from_numpy(self._preprocessor(X_raw))
-
-        model = torch.nn.Sequential(
-            torch.nn.Linear(self.input_size, self.hidden_size),
-            torch.nn.ReLU(),
-            torch.nn.Linear(self.hidden_size, self.output_size),
-        )
-
-        loss_fn = torch.nn.MSELoss(reduction='sum')
-
-        learning_rate = 1e-4
-
-        for t in range(500):
-            # Forward pass
-            y_pred = model(X_clean) # X_clean needs to be a tensor
-
-            loss = loss_fn(y_pred, y_raw)
-            if t % 100 == 99:
-                print(t, loss.item())
-
-            # Zero the gradients before running the backward pass.
-            model.zero_grad()
-
-            # Backward pass
-            loss.backward()
-
-            with torch.no_grad():
-                for param in model.parameters():
-                    param -= learning_rate * param.grad
-
-        self.model = model
-
-        return model
+        # TODO
+        pass
         
     def predict(self, X_raw):
         """Classifier probability prediction function.
@@ -121,10 +79,7 @@ class ClaimClassifier(torch.nn.Module):
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
         X_clean = torch.from_numpy(self._preprocessor(X_raw))
 
-        # YOUR CODE HERE
-        y_predict = model(X_clean)
- 
-        return y_predict
+        pass
 
     def evaluate_architecture(self):
         """Architecture evaluation utility.
@@ -169,26 +124,20 @@ def ClaimClassifierHyperParameterSearch():
     return  # Return the chosen hyper parameters
 
 def main():
+    
+    # Read the dataset
+    dataset = ClaimDataset('part2_training_data.csv')
+
+    split_idx_train = int(0.6 * len(dataset))
+    split_idx_val = int((0.6 + 0.2) * len(dataset))
+
+    dataset_train = dataset[:split_idx_train]
+    dataset_val = dataset[:split_idx_train]
+    dataset_test = dataset[split_idx_val:]
+
+    # Create a network
     input_dim = 9
     hidden_layers = 2
-    
-    # drv_age1, vh_age, vh_cyl, vh_din, pol_bonus, vh_sale_begin, vh_sale_end, 
-    # vh_value, vh_speed, claim_amount, made_claim
-    dataset = np.genfromtxt('part2_training_data.csv',delimiter=',',skip_header=1)
-    np.random.shuffle(dataset)
-
-    x = dataset[:, :input_dim]
-    y = dataset[:, input_dim+1:] # not including claim_amount
-
-    split_idx_train = int(0.6 * len(x))
-    split_idx_val = int((0.6 + 0.2) * len(x))
-
-    x_train = x[:split_idx_train]
-    y_train = y[:split_idx_train]
-    x_val = x[split_idx_train:split_idx_val]
-    y_val = y[split_idx_train:split_idx_val]
-    x_test = x[split_idx_val:]
-    y_test = y[split_idx_val:]
 
     # claim_classifier = ClaimClassifier(hidden_layers)
 
