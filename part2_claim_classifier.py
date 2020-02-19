@@ -2,22 +2,24 @@ import numpy as np
 import pickle
 
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
+
 from sklearn.metrics import classification_report, confusion_matrix
 
 # customised classes
 from claim_dataset import *
+from claim_net import *
 
-class ClaimClassifier(torch.nn.Module):
+class ClaimClassifier():
 
-    def __init__(self):
+    def __init__(self, input_dim, neurons, activations, loss_fun):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
         """
-        super(ClaimClassifier, self).__init__()
-        
+        self._net = ClaimNet(input_dim, neurons, activations, loss_fun)
 
     def _preprocessor(self, X_raw):
         """Data preprocessing function.
@@ -137,9 +139,10 @@ def main():
 
     # Create a network
     input_dim = 9
-    hidden_layers = 2
-
-    # claim_classifier = ClaimClassifier(hidden_layers)
+    neurons = [18, 1]
+    activations = ["relu", "sigmoid"]
+    loss_fun = "bse"
+    claim_classifier = ClaimClassifier(input_dim, neurons, activations, loss_fun)
 
     # claim_classifier.fit(x_train, y_train)
 
