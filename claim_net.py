@@ -30,6 +30,7 @@ class ClaimNet(nn.Module):
 
         self._ll1 = nn.Linear(input_dim, neurons[0])
         self._ll2 = nn.Linear(neurons[0], neurons[1])
+        self._ll3 = nn.Linear(neurons[1], neurons[2])
 
 
     def forward(self, x):
@@ -41,6 +42,7 @@ class ClaimNet(nn.Module):
         #     x = layer(x)
 
         x = F.relu(self._ll1(x))
-        x = F.sigmoid(self._ll2(x))
+        x = F.relu(self._ll2(x))
+        x = torch.sigmoid(self._ll3(x))
 
         return x
