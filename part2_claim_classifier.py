@@ -109,7 +109,7 @@ class ClaimClassifier():
             shuffle = True
         
         # Prepare dataset for training
-        targets = np.array([t for t in y_raw])
+        targets = np.array([y for y in y_raw])
         dataset = np.append(X_clean, targets, axis=1)
         optimiser = optim.Adam(self.model.parameters(), lr=learning_rate)
 
