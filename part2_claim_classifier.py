@@ -21,6 +21,9 @@ class ClaimClassifier():
         necessary. 
         """
         self._net = ClaimNet(input_dim, neurons, activations)
+        print("=== The created network is: ===")
+        print(self._net)
+        print()
         self._epoch = epoch
         self._normaliser = None
 
@@ -31,6 +34,10 @@ class ClaimClassifier():
         elif loss_func == "cross_entropy":
             self._loss_func = nn.CrossEntropyLoss()
 
+        print("=== The parameters are : ===")
+        for name, param in self._net.named_parameters():
+            print(name, param.data)
+        print()
         if optimiser == "sgd":
             self._optimiser = optim.SGD(self._net.parameters(), learning_rate)
 
@@ -53,7 +60,7 @@ class ClaimClassifier():
         """
         X_raw = np.transpose(X_raw)
         if self._normaliser == None:
-            self._normaliser = Normalizer(norm='max')
+            self._normaliser = Normalizer(norm='l1')
             self._normaliser.fit(X_raw)
         X_raw = self._normaliser.transform(X_raw)
 
@@ -78,9 +85,10 @@ class ClaimClassifier():
         """
         # Create a dataset loader
         dataset = ClaimDataset(self._preprocessor(X_raw), y_raw)
-        dataset_loader = DataLoader(dataset, batch_size=8, shuffle=True)
+        dataset_loader = DataLoader(dataset, batch_size=100, shuffle=True)
         
         # Training
+        pri = False
         for _ in range(self._epoch):
             for x_batch, y_batch in dataset_loader:
                 # Forward
@@ -88,10 +96,24 @@ class ClaimClassifier():
 
                 # Loss
                 loss = self._loss_func(output, y_batch)
+                if not pri:
+                    print("=== Print out the backprop orders: ===")
+                    print("The 1st should be Loss function:   ", loss.grad_fn)
+                    print("The 2nd should be the sigmoid:     ", loss.grad_fn.next_functions[0][0])
+                    print("The 3rd should be the liner layer: ", loss.grad_fn.next_functions[0][0].next_functions[0][0])
+                    print("The 4th should be the relu:        ", loss.grad_fn.next_functions[0][0].next_functions[0][0].next_functions[0][0])
+                    print()
+                    pri = True
 
                 # Backprop
+                print("=== Gradient change: ===")
+                print("ll1.bias.grad before backward: ") 
+                print(self._net._ll1.bias.grad)
                 self._net.zero_grad()
                 loss.backward()
+                print("ll1.bias.grad after backward: ") 
+                print(self._net._ll1.bias.grad)
+                print()
 
                 # Optimise
                 self._optimiser.step()
@@ -116,8 +138,19 @@ class ClaimClassifier():
 
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
         X_clean = torch.from_numpy(self._preprocessor(X_raw)).float()
+        
+        # Produce raw predictions
+        predictions = self._net(X_clean)
 
-        return self._net(x_batch)
+        # Convert to binary classes
+        predictions_binary = []
+        for i in range (len(predictions)):
+            if (predictions[i] < 0.5):
+                predictions_binary.append(0)
+            else:
+                predictions_binary.append(1)
+        return np.asarray(predictions_binary)
+
 
     def evaluate_architecture(self):
         """Architecture evaluation utility.
@@ -182,18 +215,20 @@ def main():
 
     # Create a network
     input_dim = 9
-    neurons = [18, 1]
+    neurons = [19, 9, 1]
     activations = ["relu", "sigmoid"]
     loss_fun = "bce"
     optimiser = "sgd"
-    learning_rate = 0.01
+    learning_rate = 0.0001
     epoch = 2
     claim_classifier = ClaimClassifier(input_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch)
 
     # Train the network
     claim_classifier.fit(x_train, y_train)
 
-    # prediction_train = claim_classifier.register_parameter(x_train)
+    #Predict
+    prediction_val = claim_classifier.predict(x_train)
+    print([data for data in prediction_val if data == 1])
     # prediction_test = claim_classifier.predict(x_test)
     
     # TODO: Evaluation of prediction_train and prediction_test
