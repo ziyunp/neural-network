@@ -65,8 +65,9 @@ class ClaimClassifier():
         self: (optional)
             an instance of the fitted model
         """
-        # Create a dataset
-        dataset = ClaimDataset(np.append(self._preprocessor(X_raw), y_raw, 1))
+        # Create a dataset loader
+        dataset = ClaimDataset(self._preprocessor(X_raw), y_raw)
+        dataset_loader = DataLoader(dataset, batch_size=8, shuffle=True)
         
         # Forward
         for _ in range(self._epoch):
