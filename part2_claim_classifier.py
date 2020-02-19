@@ -137,7 +137,8 @@ class ClaimClassifier():
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
         X_clean = self._preprocessor(X_raw)
         y_pred = self.model(torch.from_numpy(X_clean).float())
-        return  y_pred # YOUR PREDICTED CLASS LABELS
+        threshold = 0.5
+        return binary_conv(y_pred, threshold) # YOUR PREDICTED CLASS LABELS
 
     def evaluate_architecture(self, prediction, annotation):
         """Architecture evaluation utility.
@@ -229,9 +230,8 @@ def main():
     net.fit(x_train, y_train)
     
     # prediction_train = claim_classifier.register_parameter(x_train)
-    y_pred = net.predict(x_test).detach().numpy()
-    y_pred_binary = binary_conv(y_pred, 0.5)
-    print(net.evaluate_architecture(y_pred_binary, y_test))
+    y_pred = net.predict(x_test)
+    print(net.evaluate_architecture(y_pred, y_test))
     # TODO: Evaluation of prediction_train and prediction_test
 
 if __name__ == "__main__":
