@@ -32,7 +32,7 @@ class ClaimClassifier():
             elif activations[i] == "sigmoid":
                 self._layers.append(nn.Sigmoid())
             elif activations[i] == "softmax":
-                self._layers.append(nn.Softmax())
+                self._layers.append(nn.Softmax(dim=1))
             elif activations[i] == "tanh":
                 self._layers.append(nn.Tanh())
             n_inputs = neurons[i]  
@@ -192,6 +192,7 @@ def main():
     # hidden_layers = 2
     # Params for layers:
     neurons = [10, 10, 1] 
+    # NOTE: Do not use softmax when there's only one output neuron
     activations = ["relu", "relu", "sigmoid"]
 
     # Params for training:
