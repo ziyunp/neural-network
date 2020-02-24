@@ -41,6 +41,8 @@ class ClaimClassifier():
         print()
         if optimiser == "sgd":
             self._optimiser = optim.SGD(self._net.parameters(), learning_rate)
+        elif optimiser == "adam":
+            self._optimiser = optim.Adam(self._net.parameters(), learning_rate)
 
 
     def _preprocessor(self, X_raw):
@@ -61,7 +63,7 @@ class ClaimClassifier():
         """
         X_raw = np.transpose(X_raw)
         if self._normaliser == None:
-            self._normaliser = Normalizer(norm='l1')
+            self._normaliser = Normalizer(norm='max')
             self._normaliser.fit(X_raw)
         X_raw = self._normaliser.transform(X_raw)
 
@@ -86,11 +88,12 @@ class ClaimClassifier():
         """
         # Create a dataset loader
         dataset = ClaimDataset(self._preprocessor(X_raw), y_raw)
-        dataset_loader = DataLoader(dataset, batch_size=10, shuffle=True)
+        dataset_loader = DataLoader(dataset, batch_size=self._batch_size, shuffle=True)
         
         # Training
         pri = False
         for _ in range(self._epoch):
+            losses = []
             for x_batch, y_batch in dataset_loader:
                 # Forward
                 output = self._net(x_batch)
@@ -98,27 +101,29 @@ class ClaimClassifier():
                 # Loss
                 loss = self._loss_func(output, y_batch)
                 if not pri:
-                    print("=== Print out the backprop orders: ===")
-                    print("The 1st should be Loss function:   ", loss.grad_fn)
-                    print("The 2nd should be the sigmoid:     ", loss.grad_fn.next_functions[0][0])
-                    print("The 3rd should be the liner layer: ", loss.grad_fn.next_functions[0][0].next_functions[0][0])
-                    print("The 4th should be the sigmoid:     ", loss.grad_fn.next_functions[0][0].next_functions[0][0].next_functions[0][0])
-                    print()
+                    # print("=== Print out the backprop orders: ===")
+                    # print("The 1st should be Loss function:   ", loss.grad_fn)
+                    # print("The 2nd should be the sigmoid:     ", loss.grad_fn.next_functions[0][0])
+                    # print("The 3rd should be the liner layer: ", loss.grad_fn.next_functions[0][0].next_functions[0][0])
+                    # print("The 4th should be the sigmoid:     ", loss.grad_fn.next_functions[0][0].next_functions[0][0].next_functions[0][0])
+                    # print()
                     pri = True
+                losses.append(loss.item())
 
                 # Backprop
-                print("=== Gradient change: ===")
-                print("ll1.bias.grad before backward: ") 
-                print(self._net._ll1.bias.grad)
+                # print("=== Gradient change: ===")
+                # print("ll1.bias.grad before backward: ") 
+                # print(self._net._ll1.bias.grad)
                 self._net.zero_grad()
                 loss.backward()
-                print("ll1.bias.grad after backward: ") 
-                print(self._net._ll1.bias.grad)
-                print()
+                # print("ll1.bias.grad after backward: ") 
+                # print(self._net._ll1.bias.grad)
+                # print()
 
                 # Optimise
                 self._optimiser.step()
-        
+            print(sum(losses)/len(losses))
+
     def predict(self, X_raw):
         """Classifier probability prediction function.
 
@@ -218,10 +223,10 @@ def main():
     neurons = [4, 1]
     activations = ["sigmoid", "sigmoid"]
     loss_fun = "bce"
-    optimiser = "sgd"
-    learning_rate = 0.01
-    epoch = 700
-    batch_size = 10
+    optimiser = "adam"
+    learning_rate = 0.0001
+    epoch = 100
+    batch_size = 8
     claim_classifier = ClaimClassifier(input_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
 
     # Train the network
