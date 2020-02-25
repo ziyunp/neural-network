@@ -7,7 +7,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from sklearn.preprocessing import normalize, Normalizer
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix, recall_score
 
 # customised classes
 from claim_dataset import *
@@ -15,12 +15,12 @@ from claim_net import *
 
 class ClaimClassifier():
 
-    def __init__(self, input_dim, neurons, activations, loss_func, optimiser, learning_rate, epoch, batch_size):
+    def __init__(self, input_dim, output_dim, neurons, activations, loss_func, optimiser, learning_rate, epoch, batch_size):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
         """
-        self._net = ClaimNet(input_dim, neurons, activations)
+        self._net = ClaimNet(input_dim, output_dim, neurons, activations)
         print("=== The created network is: ===")
         print(self._net)
         print()
@@ -88,11 +88,11 @@ class ClaimClassifier():
         """
         # Create a dataset loader
         dataset = ClaimDataset(self._preprocessor(X_raw), y_raw)
-        dataset_loader = DataLoader(dataset, batch_size=self._batch_size, shuffle=True)
         
         # Training
         pri = False
-        for _ in range(self._epoch):
+        for e in range(self._epoch):
+            dataset_loader = DataLoader(dataset, batch_size=self._batch_size, shuffle=True)
             losses = []
             for x_batch, y_batch in dataset_loader:
                 # Forward
@@ -122,7 +122,7 @@ class ClaimClassifier():
 
                 # Optimise
                 self._optimiser.step()
-            print(sum(losses)/len(losses))
+            print(e, " : ", sum(losses)/len(losses))
 
     def predict(self, X_raw):
         """Classifier probability prediction function.
@@ -180,6 +180,8 @@ class ClaimClassifier():
         with open('part2_claim_classifier.pickle', 'wb') as target:
             pickle.dump(self, target)
 
+    def set_epoch(self, epoch):
+        self._epoch = epoch
 
 def load_model():
     # Please alter this section so that it works in tandem with the save_model method of your class
@@ -208,35 +210,86 @@ def main():
     x = dataset[:, :9]
     y = dataset[:, 10:] # not including claim_amount 
 
-    split_idx_train = int(0.6 * len(dataset))
-    split_idx_val = int((0.6 + 0.2) * len(dataset))
+    split_idx_train = int(0.8 * len(dataset))
+    split_idx_val = int((0.8 + 0.1) * len(dataset))
 
-    x_train = x[:split_idx_train]
-    y_train = y[:split_idx_train]
     x_val = x[split_idx_train:split_idx_val]
     y_val = y[split_idx_train:split_idx_val]
     x_test = x[split_idx_val:]
     y_test = y[split_idx_val:]
 
-    # Create a network
-    input_dim = 9
-    neurons = [4, 1]
-    activations = ["sigmoid", "sigmoid"]
-    loss_fun = "bce"
-    optimiser = "adam"
-    learning_rate = 0.0001
-    epoch = 100
-    batch_size = 8
-    claim_classifier = ClaimClassifier(input_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
+    x_train = x[:split_idx_train]
+    y_train = y[:split_idx_train]
 
-    # Train the network
-    claim_classifier.fit(x_train, y_train)
+    train = np.append(x_train, y_train, 1)
+    extra = []
+    for data in train:
+      if data[-1] == 1:
+        extra.append(data)
+    train = np.append(train, np.array(extra), 0)
+    train = np.append(train, np.array(extra), 0)
+    train = np.append(train, np.array(extra), 0)
+    train = np.append(train, np.array(extra), 0)
+    train = np.append(train, np.array(extra), 0)
+    train = np.append(train, np.array(extra), 0)
+    train = np.append(train, np.array(extra), 0)
+    # train = np.append(train, np.array(extra), 0)
+    # train = np.append(train, np.array(extra), 0)
+    # =========================================== #
+    # partion1 = []
+    # for data in train:
+    #   if data[-1] == 1:
+    #     partion1.append(data)
+    # partion0 = []
+    # for data in train:
+    #   if data[-1] == 0:
+    #     partion0.append(data)
+    # train = np.append(partion0[:2*len(partion1)], partion1, 0)
+    np.random.shuffle(train)
+    x_train = train[:, :9]
+    y_train = train[:, 9:]
+
+    # Create a network
+    claim_classifier = None
+    # claim_classifier = load_model()
+    if claim_classifier == None:
+        input_dim = 9
+        output_dim = 1
+        neurons = [6, 6, 6, 6, 6]
+        activations = ["relu", "sigmoid"]
+        loss_fun = "bce"
+        optimiser = "sgd"
+        learning_rate = 1e-3
+        epoch = 1
+        batch_size = 4
+        claim_classifier = ClaimClassifier(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
+    # claim_classifier.set_epoch(2)
+
+    recalls = []
+    for i in range(30): 
+        # Train the network
+        claim_classifier.fit(x_train, y_train)
+        claim_classifier.save_model()
+
+        #Predict
+        prediction_val = claim_classifier.predict(x_train)
+        # prediction_test = claim_classifier.predict(x_test)
+    
+        # Evaluation
+        print()
+        print("------- The result of ", i, "is: ------")
+        claim_classifier.evaluate_architecture(prediction_val.squeeze(), y_train)
+        recalls.append(recall_score(y_train, prediction_val.squeeze(), average='macro'))
 
     #Predict
     prediction_val = claim_classifier.predict(x_val)
     # prediction_test = claim_classifier.predict(x_test)
-    
+
+    # Evaluation
+    print()
+    print("------- The result of validation set is: ------")
     claim_classifier.evaluate_architecture(prediction_val.squeeze(), y_val)
+    # claim_classifier.evaluate_architecture(prediction_test.squeeze(), y_test)
 
 if __name__ == "__main__":
     main()

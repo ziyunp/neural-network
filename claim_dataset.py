@@ -5,8 +5,6 @@ from torch.utils.data import Dataset, DataLoader
 
 class ClaimDataset(Dataset):
     """ Claim dataset. """
-    _ATTRIBUTE_NUM = 9
-    _LABEL_IDX = 9
 
     def __init__(self, attributes, labels):
         """

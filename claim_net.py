@@ -5,7 +5,7 @@ import torch.nn as nn
 
 class ClaimNet(nn.Module):
 
-    def __init__(self, input_dim, neurons, activations):
+    def __init__(self, input_dim, output_dim, neurons, activations):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
@@ -28,9 +28,9 @@ class ClaimNet(nn.Module):
         #     n_inputs = neurons[i]  
 
         self._ll1 = nn.Linear(input_dim, neurons[0])
+        self._tanh1 = nn.Tanh()
+        self._ll2 = nn.Linear(neurons[0], output_dim)
         self._sigmoid1 = nn.Sigmoid()
-        self._ll2 = nn.Linear(neurons[0], neurons[1])
-        self._sigmoid2 = nn.Sigmoid()
 
 
     def forward(self, x):
@@ -42,8 +42,8 @@ class ClaimNet(nn.Module):
         #     x = layer(x)
 
         x = self._ll1(x)
-        x = self._sigmoid1(x)
+        x = self._tanh1(x)
         x = self._ll2(x)
-        x = self._sigmoid2(x)
+        x = self._sigmoid1(x)
 
         return x
