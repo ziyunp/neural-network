@@ -157,8 +157,18 @@ class ClaimClassifier():
                 predictions_binary.append(0)
             else:
                 predictions_binary.append(1)
-        return np.asarray(predictions_binary)
+        return np.asarray(torch.Tensor.cpu(predictions).detach().numpy())
 
+    def convert_to_binary(self, predictions, threshold = 0.5):
+        """Convert to binary classes
+        """
+        predictions_binary = []
+        for i in range (len(predictions)):
+            if (predictions[i] < threshold):
+                predictions_binary.append(0)
+            else:
+                predictions_binary.append(1)
+        return np.asarray(predictions_binary)
 
     def evaluate_architecture(self, prediction, annotation):
         """Architecture evaluation utility.
@@ -313,24 +323,27 @@ def main():
         claim_classifier.save_model()
 
         #Predict
-        prediction_val = claim_classifier.predict(x_train)
-        # prediction_test = claim_classifier.predict(x_test)
+        prob_train = claim_classifier.predict(x_train)
+        prediction_train = claim_classifier.convert_to_binary(prob_train)
     
         # Evaluation
         print()
         print("------- The result of ", i, "is: ------")
-        claim_classifier.evaluate_architecture(prediction_val.squeeze(), y_train)
-        recalls.append(recall_score(y_train, prediction_val.squeeze(), average='macro'))
+        claim_classifier.evaluate_architecture(prediction_train.squeeze(), y_train)
+        recalls.append(recall_score(y_train, prediction_train.squeeze(), average='macro'))
 
-    #Predict
-    prediction_val = claim_classifier.predict(x_val)
+    #Predict for validation
+    prob_val = claim_classifier.predict(x_val)
+    prediction_val = claim_classifier.convert_to_binary(prob_val)
     # prediction_test = claim_classifier.predict(x_test)
 
-    # Evaluation
+    # Evaluation for validation
     print()
     print("------- The result of validation set is: ------")
     claim_classifier.evaluate_architecture(prediction_val.squeeze(), y_val)
     # claim_classifier.evaluate_architecture(prediction_test.squeeze(), y_test)
+
+    plot_precision_recall(prob_val, y_val)
 
 if __name__ == "__main__":
     main()
