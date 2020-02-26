@@ -200,6 +200,8 @@ def ClaimClassifierHyperParameterSearch():
 
     The function should return your optimised hyper-parameters. 
     """
+    # Hyperparameter lists
+    # 
 
     return  # Return the chosen hyper parameters
 
@@ -241,26 +243,23 @@ def plot_precision_recall(probability, annotation):
     probability : ndarray, the probability of the label being 1
     annotation: ndarray, the actual labels
     """
-    precision1, recall1, thresholds1 = \
+    precision, recall, thresholds = \
         precision_recall_curve(annotation, probability, pos_label=1)
-    ap1 = average_precision_score(annotation, probability, pos_label=1)
-    precision0, recall0, thresholds0 = \
-        precision_recall_curve(annotation, probability, pos_label=0)
-    ap0 = average_precision_score(annotation, probability, pos_label=0)
+    ap = average_precision_score(annotation, probability, pos_label=1)
 
-    plt.figure(figsize=(8, 14))
+    plt.figure(figsize=(8, 12))
 
     plt.subplot(211)
-    plt.step(recall1, precision1)
-    plt.title('2-class Precision-Recall curve for make_claim: AP={0:0.2f}'.format(ap1), fontsize=20)
+    plt.step(recall, precision)
+    plt.title('2-class Precision-Recall curve for make_claim: AP={0:0.2f}'.format(ap), fontsize=20)
     plt.xlabel('Recall', fontsize=20)
     plt.ylabel('Precision', fontsize=20)
 
     plt.subplot(212)
-    plt.step(recall0, precision0)
-    plt.title('2-class Precision-Recall curve for not_make_claim: AP={0:0.2f}'.format(ap0), fontsize=20)
-    plt.xlabel('Recall', fontsize=20)
-    plt.ylabel('Precision', fontsize=20)
+    plt.hist(probability)
+    plt.title('Distribution of Positive Probability', fontsize=20)
+    plt.xlabel('Probability', fontsize=20)
+    plt.ylabel('Portion', fontsize=20)
 
     plt.show()
 
