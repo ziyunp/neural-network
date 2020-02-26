@@ -2,6 +2,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import train_test_split
 import pickle
 import numpy as np
+import pandas as pd
 
 
 def fit_and_calibrate_classifier(classifier, X, y):
@@ -158,3 +159,32 @@ def load_model():
     with open('part3_pricing_model.pickle', 'rb') as target:
         trained_model = pickle.load(target)
     return trained_model
+
+def main():
+    headers = ["pol_bonus","pol_coverage","pol_payd","pol_usage","pol_insee_code","drv_age1","drv_age2",
+    "drv_sex1","drv_sex2","drv_age_lic1","drv_age_lic2","vh_age","vh_cyl","vh_din","vh_fuel",
+    "vh_make","vh_model","vh_sale_begin","vh_sale_end","vh_speed","vh_type","vh_value","vh_weight","commune_code","canton_code","city_district_code","regional_department_code"]
+
+    input_dim = len(headers)
+    # hidden_layers = 2
+
+    
+    dataset = pd.read_csv('part3_training_data.csv', usecols=headers)  
+    print(dataset)
+    # np.random.shuffle(dataset)
+
+    # x = dataset[:, :input_dim]
+    # y = dataset[:, input_dim+1:] # not including claim_amount
+
+    # split_idx_train = int(0.6 * len(x))
+    # split_idx_val = int((0.6 + 0.2) * len(x))
+
+    # x_train = x[:split_idx_train]
+    # y_train = y[:split_idx_train]
+    # x_val = x[split_idx_train:split_idx_val]
+    # y_val = y[split_idx_train:split_idx_val]
+    # x_test = x[split_idx_val:]
+    # y_test = y[split_idx_val:]
+
+if __name__ == "__main__":
+    main()
