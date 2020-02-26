@@ -7,7 +7,8 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import classification_report, confusion_matrix, recall_score, precision_recall_curve
+from sklearn.metrics import classification_report, confusion_matrix, \
+    recall_score, precision_recall_curve, average_precision_score
 
 import matplotlib.pyplot as plt
 
@@ -242,20 +243,22 @@ def plot_precision_recall(probability, annotation):
     """
     precision1, recall1, thresholds1 = \
         precision_recall_curve(annotation, probability, pos_label=1)
+    ap1 = average_precision_score(annotation, probability, pos_label=1)
     precision0, recall0, thresholds0 = \
         precision_recall_curve(annotation, probability, pos_label=0)
+    ap0 = average_precision_score(annotation, probability, pos_label=0)
 
     plt.figure(figsize=(8, 14))
 
     plt.subplot(211)
     plt.step(recall1, precision1)
-    plt.title('2-class Precision-Recall curve for make_claim', fontsize=22)
+    plt.title('2-class Precision-Recall curve for make_claim: AP={0:0.2f}'.format(ap1), fontsize=20)
     plt.xlabel('Recall', fontsize=20)
     plt.ylabel('Precision', fontsize=20)
 
     plt.subplot(212)
     plt.step(recall0, precision0)
-    plt.title('2-class Precision-Recall curve for not_make_claim', fontsize=22)
+    plt.title('2-class Precision-Recall curve for not_make_claim: AP={0:0.2f}'.format(ap0), fontsize=20)
     plt.xlabel('Recall', fontsize=20)
     plt.ylabel('Precision', fontsize=20)
 
