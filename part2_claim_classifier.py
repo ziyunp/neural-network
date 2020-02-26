@@ -230,6 +230,35 @@ def over_sampling(dataset, ratio):
         
     return label0
 
+def plot_precision_recall(probability, annotation):
+    """Plot precisin-recall curve
+
+    Parameters
+    ----------
+    probability : ndarray, the probability of the label being 1
+    annotation: ndarray, the actual labels
+    """
+    precision1, recall1, thresholds1 = \
+        precision_recall_curve(annotation, probability, pos_label=1)
+    precision0, recall0, thresholds0 = \
+        precision_recall_curve(annotation, probability, pos_label=0)
+
+    plt.figure(figsize=(8, 14))
+
+    plt.subplot(211)
+    plt.step(recall1, precision1)
+    plt.title('2-class Precision-Recall curve for make_claim', fontsize=22)
+    plt.xlabel('Recall', fontsize=20)
+    plt.ylabel('Precision', fontsize=20)
+
+    plt.subplot(212)
+    plt.step(recall0, precision0)
+    plt.title('2-class Precision-Recall curve for not_make_claim', fontsize=22)
+    plt.xlabel('Recall', fontsize=20)
+    plt.ylabel('Precision', fontsize=20)
+
+    plt.show()
+
 def main():
     
     # Read the dataset
