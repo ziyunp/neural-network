@@ -201,6 +201,36 @@ def ClaimClassifierHyperParameterSearch():
 
     return  # Return the chosen hyper parameters
 
+def over_sampling(dataset, ratio):
+    """Performs oversampling to the given dataset according to ratio 
+    Parameters
+    ----------
+    dataset : raw dataset with 9 attributes appended with 1 label 
+    ratio : a float from 0 to 1, any number larger then 1 will be treated as 1,
+            smaller will be treated as 0
+            make_claim (label 1) to not_make_claim (label 0)
+
+    Returns
+    -------
+    ndarray : Dataset after being oversampled
+    """
+    label1 = []
+    label0 = []
+    for data in dataset:
+        if data[-1] == 1:
+            label1.append(data)
+        else:
+            label0.append(data)
+    if ratio < 0:
+        ratio = 0
+    elif ratio > 1:
+        ratio = 1
+    current_ratio = len(label1) / len(label0)
+    for _ in range(int(ratio / current_ratio)):
+        label0 = np.append(label0, label1, 0)
+        
+    return label0
+
 def main():
     
     # Read the dataset
@@ -221,30 +251,9 @@ def main():
     x_train = x[:split_idx_train]
     y_train = y[:split_idx_train]
 
+    # Oversampling
     train = np.append(x_train, y_train, 1)
-    extra = []
-    for data in train:
-      if data[-1] == 1:
-        extra.append(data)
-    train = np.append(train, np.array(extra), 0)
-    train = np.append(train, np.array(extra), 0)
-    train = np.append(train, np.array(extra), 0)
-    train = np.append(train, np.array(extra), 0)
-    train = np.append(train, np.array(extra), 0)
-    train = np.append(train, np.array(extra), 0)
-    train = np.append(train, np.array(extra), 0)
-    # train = np.append(train, np.array(extra), 0)
-    # train = np.append(train, np.array(extra), 0)
-    # =========================================== #
-    # partion1 = []
-    # for data in train:
-    #   if data[-1] == 1:
-    #     partion1.append(data)
-    # partion0 = []
-    # for data in train:
-    #   if data[-1] == 0:
-    #     partion0.append(data)
-    # train = np.append(partion0[:2*len(partion1)], partion1, 0)
+    train = over_sampling(train, 1)
     np.random.shuffle(train)
     x_train = train[:, :9]
     y_train = train[:, 9:]
