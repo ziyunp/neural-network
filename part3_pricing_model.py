@@ -3,7 +3,8 @@ from sklearn.model_selection import train_test_split
 import pickle
 import numpy as np
 import pandas as pd
-
+from sklearn import preprocessing
+import torch.nn as nn
 
 def fit_and_calibrate_classifier(classifier, X, y):
     # DO NOT ALTER THIS FUNCTION
@@ -64,7 +65,33 @@ class PricingModel():
         # =============================================================
         # YOUR CODE HERE
 
-        return  # YOUR CLEAN DATA AS A NUMPY ARRAY
+        # Fill in the blanks
+        # X_clean = X_raw[:,1:35][~np.isnan(X_raw[:,1:35]).any(axis=1)]
+
+        # Select attributes (except first one)
+        X_clean = X_raw[:,1:35] # double check
+        lb = preprocessing.LabelBinarizer()
+        for i in range (X_clean.shape[1]):            
+
+            if not isinstance(X_clean[0][i], (float,int)) : # if not numerical value
+                if i == 33:
+                    for row in range (X_clean.shape[0]):
+                        if not isinstance(X_clean[row][i], str): 
+                            print(X_clean[row][i])
+                        
+
+                sparse_matrix = lb.fit_transform(X_clean[:,i])
+
+                for row in range (len(sparse_matrix)):
+                    X_clean[row][i] = sparse_matrix[row]
+        
+        
+        # Normalise with MinMaxScaler
+        # scaler = preprocessing.MinMaxScaler()
+        # scaler.fit(X_clean)
+
+        # return np.asarray(scaler.transform(X_clean))
+        # return X_clean # YOUR CLEAN DATA AS A NUMPY ARRAY
 
     def fit(self, X_raw, y_raw, claims_raw):
         """Classifier training function.
@@ -161,21 +188,23 @@ def load_model():
     return trained_model
 
 def main():
-    headers = ["pol_bonus","pol_coverage","pol_payd","pol_usage","pol_insee_code","drv_age1","drv_age2",
-    "drv_sex1","drv_sex2","drv_age_lic1","drv_age_lic2","vh_age","vh_cyl","vh_din","vh_fuel",
-    "vh_make","vh_model","vh_sale_begin","vh_sale_end","vh_speed","vh_type","vh_value","vh_weight","commune_code","canton_code","city_district_code","regional_department_code"]
+    # headers = ["pol_bonus","pol_coverage","pol_duration","pol_sit_duration","pol_payd","pol_usage","pol_insee_code","drv_age1","drv_age2",
+    # "drv_sex1","drv_sex2","drv_age_lic1","drv_age_lic2","vh_age","vh_cyl","vh_din","vh_fuel","vh_make","vh_model","vh_sale_begin","vh_sale_end","vh_speed","vh_type","vh_value","vh_weight","town_mean_altitude","town_surface_area","population","commune_code","canton_code","city_district_code","regional_department_code","made_claim"]
 
-    input_dim = len(headers)
-    # hidden_layers = 2
+    input_dim = 35
+    # # hidden_layers = 2
+    # print("Number of input variables: " , input_dim)
 
-    
-    dataset = pd.read_csv('part3_training_data.csv', usecols=headers)  
-    print(dataset)
+    dataset = pd.read_csv('part3_training_data.csv')  
     # np.random.shuffle(dataset)
 
-    # x = dataset[:, :input_dim]
-    # y = dataset[:, input_dim+1:] # not including claim_amount
-
+    x = dataset.iloc[:,:input_dim]
+    y = dataset.iloc[:,input_dim+1:] # not including claim_amount
+    model = PricingModel()
+    x_prep = model._preprocessor(x.to_numpy())
+    # test if arrays can be passed to linear layer as training data
+    # linear_layer = nn.Linear(input_dim, 1)
+    # linear_layer(x_prep)
     # split_idx_train = int(0.6 * len(x))
     # split_idx_val = int((0.6 + 0.2) * len(x))
 
