@@ -4,6 +4,7 @@ import pickle
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
+from sklearn.impute import SimpleImputer
 import torch.nn as nn
 
 def fit_and_calibrate_classifier(classifier, X, y):
@@ -70,21 +71,15 @@ class PricingModel():
 
         # Select attributes (except first one)
         X_clean = X_raw[:,1:35] # double check
+        imp = SimpleImputer(missing_values=np.nan, strategy="constant", fill_value="NA")          
+        X_clean = imp.fit_transform(X_clean)
+
         lb = preprocessing.LabelBinarizer()
-        for i in range (X_clean.shape[1]):            
-
-            if not isinstance(X_clean[0][i], (float,int)) : # if not numerical value
-                if i == 33:
-                    for row in range (X_clean.shape[0]):
-                        if not isinstance(X_clean[row][i], str): 
-                            print(X_clean[row][i])
-                        
-
+        for i in range (X_clean.shape[1]):  
+            if not isinstance(X_clean[0][i], (float,int)): # if not numerical value
                 sparse_matrix = lb.fit_transform(X_clean[:,i])
-
                 for row in range (len(sparse_matrix)):
                     X_clean[row][i] = sparse_matrix[row]
-        
         
         # Normalise with MinMaxScaler
         # scaler = preprocessing.MinMaxScaler()
