@@ -7,7 +7,9 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import classification_report, confusion_matrix, recall_score
+from sklearn.metrics import classification_report, confusion_matrix, recall_score, precision_recall_curve
+
+import matplotlib.pyplot as plt
 
 # customised classes
 from claim_dataset import *
