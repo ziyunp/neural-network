@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from sklearn.preprocessing import normalize, Normalizer
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import classification_report, confusion_matrix, recall_score
 
 # customised classes
@@ -25,7 +25,7 @@ class ClaimClassifier():
         print(self._net)
         print()
         self._epoch = epoch
-        self._normaliser = None
+        self._scaler = None
         self._batch_size = batch_size
 
         if loss_func == "bce":
@@ -61,13 +61,12 @@ class ClaimClassifier():
         ndarray
             A clean data set that is used for training and prediction.
         """
-        X_raw = np.transpose(X_raw)
-        if self._normaliser == None:
-            self._normaliser = Normalizer(norm='max')
-            self._normaliser.fit(X_raw)
-        X_raw = self._normaliser.transform(X_raw)
+        if self._scaler == None:
+            self._scaler = MinMaxScaler()
+            self._scaler.fit(X_raw)
+        X_raw = self._scaler.transform(X_raw)
 
-        return np.transpose(X_raw)
+        return np.array(X_raw)
 
     def fit(self, X_raw, y_raw):
         """Classifier training function.
