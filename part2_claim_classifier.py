@@ -1,15 +1,24 @@
 import numpy as np
 import pickle
 
+from nn_lib import *
 
-class ClaimClassifier():
+import torch
+import torchvision.transforms as transforms
+from sklearn.metrics import classification_report, confusion_matrix
 
-    def __init__(self,):
+class ClaimClassifier(torch.nn.Module):
+
+    def __init__(self, hidden_size):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
         """
-        pass
+        super(ClaimClassifier, self).__init__()
+        self.batch_size = 0
+        self.input_size = 9
+        self.hidden_size = hidden_size
+        self.output_size = 1
 
     def _preprocessor(self, X_raw):
         """Data preprocessing function.
@@ -29,7 +38,12 @@ class ClaimClassifier():
         """
         # YOUR CODE HERE
 
-        return  # YOUR CLEAN DATA AS A NUMPY ARRAY
+        self.batch_size = X_raw.shape[0]
+        self.input_size = X_raw.shape[1]
+
+        preprocessor = Preprocessor(X_raw)
+
+        return preprocessor.apply(X_raw)
 
     def fit(self, X_raw, y_raw):
         """Classifier training function.
@@ -49,10 +63,76 @@ class ClaimClassifier():
             an instance of the fitted model
         """
 
-        # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
-        # X_clean = self._preprocessor(X_raw)
-        # YOUR CODE HERE
-        pass
+        # if (not y_raw):
+        #     print("y_raw not provided")
+        #     return
+        
+        X_clean = self._preprocessor(X_raw)
+        # X_clean = torch.from_numpy(self._preprocessor(X_raw))
+        # x_batch = torch.utils.data.DataLoader(X_clean, batch_size=4,
+        #                                   shuffle=False, num_workers=0) # TODO requiring dataset object
+        # y_raw = torch.from_numpy(y_raw)
+        # y_batch = torch.utils.data.DataLoader(y_raw, batch_size=4,
+        #                                   shuffle=False, num_workers=0)
+
+        # print(X_clean)
+
+        self.model = torch.nn.Sequential(     # TODO design a suitable architecture and why are we using sequential?
+            torch.nn.Linear(self.input_size, self.hidden_size),
+            torch.nn.ReLU(),
+            torch.nn.Linear(self.hidden_size, self.output_size),
+            torch.nn.Sigmoid(),
+        )
+
+        loss_fn = torch.nn.MSELoss(reduction='sum')
+
+        learning_rate = 1e-4
+
+        for t in range(100):     # TODO epoch not t!
+            running_loss = 0.0
+            x_batch = np.array([X_clean[0]])
+            y_batch = np.array([y_raw[0]])
+            for i in range(1, len(X_clean)):   # TODO after using dataset object, change this
+                if (not i % 8 == 0):
+                    x_batch = np.append(x_batch, [X_clean[i]], axis=0)
+                    y_batch = np.append(y_batch, [y_raw[i]], axis=0)
+                else:
+                    x_batch = torch.from_numpy(x_batch)
+                    y_batch = torch.from_numpy(y_batch)
+
+                    # Forward pass
+                    y_pred = self.model(x_batch.float()) # X_clean needs to be a tensor
+
+                    # print(y_pred)
+                    # print(y_raw)
+
+
+                    loss = loss_fn(y_pred, y_batch.float())
+                    running_loss += loss.item()
+                    if i % 800 == 0:    # print every 2000 mini-batches
+                        print('[%d, %5d] loss: %.3f' %
+                            (t, i, running_loss / 800))
+                        running_loss = 0.0
+
+                    # Zero the gradients before running the backward pass.
+                    self.model.zero_grad()
+
+                    # Backward pass
+                    loss.backward()
+
+                    with torch.no_grad():
+                        for param in self.model.parameters():
+                            param -= learning_rate * param.grad
+
+                    x_batch = np.array([X_clean[i]])
+                    y_batch = np.array([y_raw[i]])
+
+        # self = model
+
+        return self
+        
+    def forward(self, x):
+        return self.model(x)
 
     def predict(self, X_raw):
         """Classifier probability prediction function.
@@ -73,11 +153,12 @@ class ClaimClassifier():
         """
 
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
-        # X_clean = self._preprocessor(X_raw)
+        X_clean = torch.from_numpy(self._preprocessor(X_raw))
 
         # YOUR CODE HERE
-
-        return  # YOUR PREDICTED CLASS LABELS
+        y_predict = self.model(X_clean.float())
+ 
+        return y_predict
 
     def evaluate_architecture(self):
         """Architecture evaluation utility.
@@ -88,7 +169,14 @@ class ClaimClassifier():
         You can use external libraries such as scikit-learn for this
         if necessary.
         """
-        pass
+        
+        # print("=== Performance of the model on the training data ===")
+        # print(confusion_matrix(self.y_train, self.predict_train))
+        # print(classification_report(self.y_train, self.predict_train))
+
+        # print("=== Performance of the model on the test data ===")
+        # print(confusion_matrix(self.y_test, self.predict_test))
+        # print(classification_report(self.y_test, self.predict_test))
 
     def save_model(self):
         # Please alter this file appropriately to work in tandem with your load_model function below
@@ -113,3 +201,51 @@ def ClaimClassifierHyperParameterSearch():
     """
 
     return  # Return the chosen hyper parameters
+
+def main():
+    input_dim = 9
+    hidden_layers = 16
+    
+    # drv_age1, vh_age, vh_cyl, vh_din, pol_bonus, vh_sale_begin, vh_sale_end, 
+    # vh_value, vh_speed, claim_amount, made_claim
+    dataset = np.genfromtxt('part2_training_data.csv',delimiter=',',skip_header=1)
+    np.random.shuffle(dataset)
+
+    x = dataset[:, :input_dim]
+    y = dataset[:, input_dim+1:] # not including claim_amount
+
+    split_idx_train = int(0.6 * len(x))
+    split_idx_val = int((0.6 + 0.2) * len(x))
+
+    x_train = x[:split_idx_train]
+    y_train = y[:split_idx_train]
+    x_val = x[split_idx_train:split_idx_val]
+    y_val = y[split_idx_train:split_idx_val]
+    x_test = x[split_idx_val:]
+    y_test = y[split_idx_val:]
+
+    claim_classifier = ClaimClassifier(hidden_layers)
+
+    claim_classifier.fit(x_train, y_train)
+
+    # prediction_train = claim_classifier.register_parameter(x_train)
+    # prediction_test = claim_classifier.predict(x_test)
+    prediction_val = claim_classifier.predict(x_val)
+
+    # TODO: Evaluation of prediction_train and prediction_test
+    preds = np.squeeze(prediction_val.detach().numpy())
+    with np.nditer(preds, op_flags=['readwrite']) as it:
+        for x in it:
+            if x < 0.5:
+                x[...] = 0
+            else:
+                x[...] = 1
+    targets = np.squeeze(y_val)
+    accuracy = (preds == targets).mean()
+    print(preds)
+    print(targets)
+    print("Validation accuracy: {}".format(accuracy))
+    
+
+if __name__ == "__main__":
+    main()
