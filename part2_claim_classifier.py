@@ -133,7 +133,7 @@ class ClaimClassifier():
             # Average loss
             average_loss = sum(losses)/len(losses)
             loss_hist.append(average_loss)
-            print("Epoch ", e, " : ", average_loss)
+            print("   Loss: ", average_loss)
 
             # Evaluate
             prediction = self.predict(X_val)
@@ -141,13 +141,17 @@ class ClaimClassifier():
             ap_hist.append(average_precision)
             roc_auc = roc_auc_score(y_val, prediction)
             roc_auc_hist.append(roc_auc)
-            print("Epoch ", e, " : ", roc_auc)
-            print("Epoch ", e, " : ", average_precision)
+            print("   AUC:  ", roc_auc)
+            print("   AP:   ", average_precision)
 
             # Early stopping
             if e > 2:
-                if (abs(average_precision - ap_hist[-2]) + \
-                    abs(ap_hist[-2] - ap_hist[-3])) / 2 < early_stop:
+                # if (abs(ap_hist[-1] - ap_hist[-2]) + \
+                #     abs(ap_hist[-2] - ap_hist[-3])) / 2 < early_stop:
+                #         print("Early stopping ...")
+                #         break
+                if (abs(roc_auc_hist[-1] - roc_auc_hist[-2]) + \
+                    abs(roc_auc_hist[-2] - roc_auc_hist[-3])) / 2 < early_stop:
                         print("Early stopping ...")
                         break
 
