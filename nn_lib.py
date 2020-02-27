@@ -357,12 +357,11 @@ class Trainer(object):
         self._loss_layer = None
         if loss_fun == "mse":
             self._loss_layer = MSELossLayer()
-        elif loss_fun == "cross_entropy":
-            self._loss_layer = CrossEntropyLossLayer()
-        elif loss_fun == "bce":
+        # two possible loss_fun values for CrossEntropy given in this file
+        elif loss_fun == "cross_entropy" or loss_fun == "cross_entropy":
             self._loss_layer = CrossEntropyLossLayer()
         else:
-            raise ValueError("Loss function must be either 'mse' or 'bce'.")
+            raise ValueError("Loss function must be either 'mse', 'cross_entropy' or 'bce'.")
 
     @staticmethod
     def shuffle(input_dataset, target_dataset):
@@ -377,10 +376,15 @@ class Trainer(object):
 
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
+        print("shuffle 1")
         data_len = input_dataset.shape[1]
+        print("shuffle 2")
         targets = np.array([t for t in target_dataset])
+        print("shuffle 3")
         inputs = np.append(input_dataset, targets, axis=1)
+        print("shuffle 4")
         np.random.shuffle(inputs)
+        print("shuffle 5")
         return (inputs[:,:data_len], inputs[:, data_len:])
 
     def train(self, input_dataset, target_dataset):
@@ -403,13 +407,17 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_training_data_points, ).
         """
+        print("train1")
 
         if self._loss_layer == None:
             raise ValueError("Loss layer is None")
+        print("train2")
         
         self.checkDatasetsDimensions(input_dataset, target_dataset)
+        print("train3")
 
         for epoch in range(self.nb_epoch):
+            
             if self.shuffle_flag:
                 s_input, s_target = self.shuffle(input_dataset, target_dataset)
             else: 
@@ -433,6 +441,7 @@ class Trainer(object):
                 loss_grad = self._loss_layer.backward()
                 gradients = self.network.backward(loss_grad)
                 self.network.update_params(self.learning_rate)
+        print("train5")
 
 
     def eval_loss(self, input_dataset, target_dataset):
@@ -445,8 +454,12 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_evaluation_data_points, ).
         """
+        print("eval1")
+
         self.checkDatasetsDimensions(input_dataset, target_dataset)
+        print("eval2")
         predictions = self.network.forward(input_dataset)
+        print("eval3")
         return self._loss_layer.forward(predictions, target_dataset)
 
     def checkDatasetsDimensions(self, input_dataset, target_dataset):
