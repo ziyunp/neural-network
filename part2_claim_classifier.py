@@ -282,19 +282,28 @@ def plot_precision_recall(probability, annotation):
     precision, recall, thresholds = \
         precision_recall_curve(annotation, probability, pos_label=1)
     ap = average_precision_score(annotation, probability, pos_label=1)
-    plt.figure(figsize=(8, 12))
 
-    plt.subplot(211)
+    fpr, tpr, thresholds_roc = roc_curve(annotation, probability, pos_label=1)
+    auc = roc_auc_score(annotation, probability)
+    plt.figure(figsize=(10, 18))
+
+    plt.subplot(311)
     plt.step(recall, precision)
-    plt.title('2-class Precision-Recall curve for make_claim: AP={0:0.4f}'.format(ap), fontsize=20)
-    plt.xlabel('Recall', fontsize=20)
-    plt.ylabel('Precision', fontsize=20)
+    plt.title('2-class Precision-Recall curve for make_claim: AP={0:0.4f}'.format(ap), fontsize=18)
+    plt.xlabel('Recall', fontsize=16)
+    plt.ylabel('Precision', fontsize=16)
 
-    plt.subplot(212)
-    plt.hist(probability)
-    plt.title('Distribution of Positive Probability', fontsize=20)
-    plt.xlabel('Probability', fontsize=20)
-    plt.ylabel('Portion', fontsize=20)
+    plt.subplot(312)
+    plt.step(tpr, fpr)
+    plt.title('2-class ROC for make_claim: AUC={0:0.4f}'.format(auc), fontsize=18)
+    plt.xlabel('Recall', fontsize=16)
+    plt.ylabel('Precision', fontsize=16)
+
+    plt.subplot(313)
+    plt.hist(probability, bins=40)
+    plt.title('Distribution of Positive Probability', fontsize=18)
+    plt.xlabel('Probability', fontsize=16)
+    plt.ylabel('Portion', fontsize=16)
 
     plt.show()
 
