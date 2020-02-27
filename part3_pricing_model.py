@@ -6,6 +6,7 @@ import pandas as pd
 from sklearn import preprocessing
 from sklearn.impute import SimpleImputer
 import torch.nn as nn
+from data_processing import *
 
 def fit_and_calibrate_classifier(classifier, X, y):
     # DO NOT ALTER THIS FUNCTION
@@ -65,21 +66,50 @@ class PricingModel():
         """
         # =============================================================
         # YOUR CODE HERE
+        NUM = []
+        ORD = []
+        CAT = []
+        
+        # Split attributes according to data type
+        for i in range(len(NUMERICAL)):
+            index = NUMERICAL[i].value
+            NUM.append(X_raw[:,index])
+        for j in range(len(ORDINAL)):
+            index = ORDINAL[j].value
+            ORD.append(X_raw[:,index])
+        for k in range(len(CATEGORICAL)):
+            index = CATEGORICAL[k].value
+            CAT.append(X_raw[:,index])
+        NUM = np.array(NUM).transpose()
+        ORD = np.array(ORD).transpose()
+        CAT = np.array(CAT).transpose()
 
-        # Fill in the blanks
-        # X_clean = X_raw[:,1:35][~np.isnan(X_raw[:,1:35]).any(axis=1)]
+        # Fill in missing values
+        imp_NA = SimpleImputer(missing_values=np.nan, strategy="constant", fill_value="NA") 
+        imp_zero = SimpleImputer(missing_values=0, strategy="constant", fill_value=0) 
+        imp_mean_nan = SimpleImputer(missing_values=np.nan, strategy="mean")     
+        imp_mean_zero = SimpleImputer(missing_values=0, strategy="mean")     
+        # replace nan and 0 occurrences in NUMERICAL type with mean
+        NUM = imp_mean_nan.fit_transform(NUM)
+        NUM = imp_mean_zero.fit_transform(NUM)
+        # replace nan occurrences in ORDINAL type with "NA"
+        ORD = imp_NA.fit_transform(ORD)
+        # for CATEGORICAL type, check if values are string/numeric
+        CAT = imp_NA.fit_transform(CAT)
+        var = 0
+        for i in range(CAT.shape[1]):
+            if isinstance(CAT[0][i], float):
+                imputed_col = imp_zero.fit_transform(CAT[:,i].reshape(-1,1))
+                imputed_flat = imputed_col.flatten()
+                for row in range(CAT.shape[0]):
+                    CAT[row][i] = imputed_flat[row]
 
-        # Select attributes (except first one)
-        X_clean = X_raw[:,1:35] # double check
-        imp = SimpleImputer(missing_values=np.nan, strategy="constant", fill_value="NA")          
-        X_clean = imp.fit_transform(X_clean)
-
-        lb = preprocessing.LabelBinarizer()
-        for i in range (X_clean.shape[1]):  
-            if not isinstance(X_clean[0][i], (float,int)): # if not numerical value
-                sparse_matrix = lb.fit_transform(X_clean[:,i])
-                for row in range (len(sparse_matrix)):
-                    X_clean[row][i] = sparse_matrix[row]
+        # lb = preprocessing.LabelBinarizer()
+        # for i in range (X_clean.shape[1]):  
+        #     if not isinstance(X_clean[0][i], (float,int)): # if not numerical value
+        #         sparse_matrix = lb.fit_transform(X_clean[:,i])
+        #         for row in range (len(sparse_matrix)):
+        #             X_clean[row][i] = sparse_matrix[row]
         
         # Normalise with MinMaxScaler
         # scaler = preprocessing.MinMaxScaler()
