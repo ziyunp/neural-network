@@ -376,12 +376,12 @@ class Trainer(object):
 
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
-        checkDatasetsDimensions(input_dataset, target_dataset)
-        data_len = input_dataset.shape[1]
-        targets = np.array([t for t in target_dataset])
-        inputs = np.append(input_dataset, targets, axis=1)
-        np.random.shuffle(inputs)
-        return (inputs[:,:data_len], inputs[:, data_len:])
+
+        order = np.arange(len(input_dataset))
+        np.random.shuffle(order)
+        input_dataset = input_dataset[order]
+        target_dataset = target_dataset[order]
+        return (input_dataset, target_dataset)
 
     def train(self, input_dataset, target_dataset):
         """
