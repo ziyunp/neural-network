@@ -359,9 +359,10 @@ class Trainer(object):
             self._loss_layer = MSELossLayer()
         elif loss_fun == "cross_entropy":
             self._loss_layer = CrossEntropyLossLayer()
+        elif loss_fun == "bce":
+            self._loss_layer = CrossEntropyLossLayer()
         else:
-            print("Error: Loss function must be either 'mse' or 'bce'.")
-
+            raise ValueError("Loss function must be either 'mse' or 'bce'.")
 
     @staticmethod
     def shuffle(input_dataset, target_dataset):
@@ -417,7 +418,6 @@ class Trainer(object):
             # split
             input_batches = []
             target_batches = []
-            assert input_dataset.shape[0] == target_dataset.shape[0]
             n_datapoints = input_dataset.shape[0]
 
             n_batches = n_datapoints // self.batch_size 
@@ -450,6 +450,8 @@ class Trainer(object):
         return self._loss_layer.forward(predictions, target_dataset)
 
     def checkDatasetsDimensions(self, input_dataset, target_dataset):
+        if target_dataset.ndim != 2 or input_dataset.ndim != 2:
+            raise ValueError("Datasets must have 2 dimensions")
         input_data_points = len(input_dataset)
         input_dim = len(input_dataset[0])
         target_data_points = len(target_dataset)
