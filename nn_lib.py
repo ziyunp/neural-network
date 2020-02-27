@@ -1,6 +1,6 @@
 import numpy as np
 import pickle
-
+import math
 
 def xavier_init(size, gain=1.0):
     """
@@ -191,7 +191,6 @@ class LinearLayer(Layer):
         """
 
         self._grad_W_current = np.dot(self._cache_current, grad_z)
-        # CHECK HERE
         self._grad_b_current = np.dot(np.ones(self._cache_current.shape[1]), grad_z)
 
         return np.dot(grad_z, np.transpose(self._W))
@@ -360,12 +359,11 @@ class Trainer(object):
         self._loss_layer = None
         if loss_fun == "mse":
             self._loss_layer = MSELossLayer()
-        elif loss_fun == "cross_entropy":
-            self._loss_layer = CrossEntropyLossLayer()
-        elif loss_fun == "bce":
+        # two possible loss_fun values for CrossEntropy given in this file
+        elif loss_fun == "cross_entropy" or loss_fun == "bce":
             self._loss_layer = CrossEntropyLossLayer()
         else:
-            raise ValueError("Loss function must be either 'mse' or 'bce'.")
+            raise ValueError("Loss function must be either 'mse', 'cross_entropy' or 'bce'.")
 
     @staticmethod
     def shuffle(input_dataset, target_dataset):
@@ -380,11 +378,11 @@ class Trainer(object):
 
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
-        data_len = input_dataset.shape[1]
-        targets = np.array([t for t in target_dataset])
-        inputs = np.append(input_dataset, targets, axis=1)
-        np.random.shuffle(inputs)
-        return (inputs[:,:data_len], inputs[:, data_len:])
+        order = np.arange(len(input_dataset))
+        np.random.shuffle(order)
+        input_dataset = input_dataset[order]
+        target_dataset = target_dataset[order]
+        return (input_dataset, target_dataset)
 
     def train(self, input_dataset, target_dataset):
         """
@@ -406,36 +404,37 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_training_data_points, ).
         """
-
-        if self._loss_layer == None:
-            raise ValueError("Loss layer is None")
         
-        self.checkDatasetsDimensions(input_dataset, target_dataset)
+        print("train1")
+        if self._loss_layer == None:
+            raise ValueError("Loss layer cannot be None")
+        # if given 1-d array, convert into 2-d 
+        if target_dataset.ndim == 1:
+            target_dataset = np.array([[t] for t in target_dataset])
+
+        checkDatasetsDimensions(input_dataset, target_dataset)
 
         for epoch in range(self.nb_epoch):
-            if self.shuffle_flag:
-                s_input, s_target = self.shuffle(input_dataset, target_dataset)
-            else: 
-                s_input, s_target = input_dataset, target_dataset
             
-            # split
-            input_batches = []
-            target_batches = []
+            if self.shuffle_flag:
+                input_dataset, target_dataset = self.shuffle(input_dataset, target_dataset)
+
             n_datapoints = input_dataset.shape[0]
 
-            n_batches = n_datapoints // self.batch_size 
-            if (n_datapoints % self.batch_size) != 0:
-                n_batches += 1
-            for i in range(n_batches):
-                input_batches.append(s_input[i * self.batch_size : (i + 1) * self.batch_size])
-                target_batches.append(s_target[i * self.batch_size : (i + 1) * self.batch_size])
+            n_batches = math.ceil(n_datapoints/self.batch_size)
+            
             # train with each batch
-            for n in range (n_batches):
-                outputs = self.network.forward(input_batches[n])
-                loss = self._loss_layer.forward(outputs, target_batches[n])
+            for i in range(n_batches):
+                input_batch=input_dataset[i * self.batch_size : (i + 1) * self.batch_size]
+                target_batch=target_dataset[i * self.batch_size : (i + 1) * self.batch_size]
+                outputs = self.network.forward(input_batch)
+                self._loss_layer.forward(outputs, target_batch)
                 loss_grad = self._loss_layer.backward()
-                gradients = self.network.backward(loss_grad)
+                self.network.backward(loss_grad)
                 self.network.update_params(self.learning_rate)
+
+        print("train2")
+        
 
 
     def eval_loss(self, input_dataset, target_dataset):
@@ -448,26 +447,17 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_evaluation_data_points, ).
         """
-        self.checkDatasetsDimensions(input_dataset, target_dataset)
+        print("eval 1")
+        # if given 1-d array, convert into 2-d 
+        if target_dataset.ndim == 1:
+            target_dataset = np.array([[t] for t in target_dataset])
+
+        checkDatasetsDimensions(input_dataset, target_dataset)
         predictions = self.network.forward(input_dataset)
+        print("eval 2")
         return self._loss_layer.forward(predictions, target_dataset)
 
-    def checkDatasetsDimensions(self, input_dataset, target_dataset):
-        if target_dataset.ndim != 2 or input_dataset.ndim != 2:
-            raise ValueError("Datasets must have 2 dimensions")
-        input_data_points = len(input_dataset)
-        input_dim = len(input_dataset[0])
-        target_data_points = len(target_dataset)
-        target_dim = len(target_dataset[0])
-
-        if (input_data_points != target_data_points):
-            raise ValueError("Number of data points in input and target dataset are not consistent")
-        for row in range(input_data_points):
-            if len(input_dataset[row]) != input_dim:
-                raise ValueError("Dimensions of input dataset is not consistent")
-        for row in range(target_data_points):
-            if len(target_dataset[row]) != target_dim:
-                raise ValueError("Dimensions of target dataset is not consistent")
+    
 
 class Preprocessor(object):
     """
@@ -529,6 +519,25 @@ class Preprocessor(object):
                     initialise the preprocessor")
 
         return np.add(np.multiply(data, self.params), self.col_min)
+
+def checkDatasetsDimensions(input_dataset, target_dataset):
+    if input_dataset.ndim != 2:
+        raise ValueError("Input dataset must have 2 dimensions")
+    
+    input_data_points = len(input_dataset)
+    input_dim = len(input_dataset[0])
+    target_data_points = len(target_dataset)
+    target_dim = len(target_dataset[0])
+
+    if (input_data_points != target_data_points):
+        raise ValueError("Number of data points in input and target dataset are not consistent")
+    # check that each row in a dataset has the same number of features
+    for row in range(input_data_points):
+        if len(input_dataset[row]) != input_dim:
+            raise ValueError("Dimensions of input dataset is not consistent")
+    for row in range(target_data_points):
+        if len(target_dataset[row]) != target_dim:
+            raise ValueError("Dimensions of target dataset is not consistent")
 
 def example_main():
     input_dim = 4
