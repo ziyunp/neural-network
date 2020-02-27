@@ -404,10 +404,13 @@ class Trainer(object):
         
         print("train1")
         if self._loss_layer == None:
-            raise ValueError("Loss layer is None")
-        
+            raise ValueError("Loss layer cannot be None")
+        # if given 1-d array, convert into 2-d 
+        if target_dataset.ndim == 1:
+            target_dataset = np.array([[t] for t in target_dataset])
+
         checkDatasetsDimensions(input_dataset, target_dataset)
-        
+
         for epoch in range(self.nb_epoch):
             
             if self.shuffle_flag:
@@ -416,15 +419,15 @@ class Trainer(object):
             n_datapoints = input_dataset.shape[0]
 
             n_batches = math.ceil(n_datapoints/self.batch_size)
-
+            
+            # train with each batch
             for i in range(n_batches):
-                # train with each batch
                 input_batch=input_dataset[i * self.batch_size : (i + 1) * self.batch_size]
                 target_batch=target_dataset[i * self.batch_size : (i + 1) * self.batch_size]
                 outputs = self.network.forward(input_batch)
-                loss = self._loss_layer.forward(outputs, target_batch)
+                self._loss_layer.forward(outputs, target_batch)
                 loss_grad = self._loss_layer.backward()
-                gradients = self.network.backward(loss_grad)
+                self.network.backward(loss_grad)
                 self.network.update_params(self.learning_rate)
 
         print("train2")
@@ -442,6 +445,10 @@ class Trainer(object):
                 shape (#_evaluation_data_points, ).
         """
         print("eval 1")
+        # if given 1-d array, convert into 2-d 
+        if target_dataset.ndim == 1:
+            target_dataset = np.array([[t] for t in target_dataset])
+
         checkDatasetsDimensions(input_dataset, target_dataset)
         predictions = self.network.forward(input_dataset)
         print("eval 2")
@@ -511,8 +518,8 @@ class Preprocessor(object):
         return np.add(np.multiply(data, self.params), self.col_min)
 
 def checkDatasetsDimensions(input_dataset, target_dataset):
-    if target_dataset.ndim != 2 or input_dataset.ndim != 2:
-        raise ValueError("Datasets must have 2 dimensions")
+    if input_dataset.ndim != 2:
+        raise ValueError("Input dataset must have 2 dimensions")
     
     input_data_points = len(input_dataset)
     input_dim = len(input_dataset[0])
@@ -521,6 +528,7 @@ def checkDatasetsDimensions(input_dataset, target_dataset):
 
     if (input_data_points != target_data_points):
         raise ValueError("Number of data points in input and target dataset are not consistent")
+    # check that each row in a dataset has the same number of features
     for row in range(input_data_points):
         if len(input_dataset[row]) != input_dim:
             raise ValueError("Dimensions of input dataset is not consistent")
