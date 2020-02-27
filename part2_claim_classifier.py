@@ -126,6 +126,8 @@ class ClaimClassifier():
                 self._optimiser.step()
             print(e, " : ", sum(losses)/len(losses))
 
+        self.save_model()
+
     def predict(self, X_raw):
         """Classifier probability prediction function.
 
