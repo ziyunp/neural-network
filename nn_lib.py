@@ -158,10 +158,12 @@ class LinearLayer(Layer):
             {np.ndarray} -- Output array of shape (batch_size, n_out)
         """
 
-        if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
-            raise ValueError("Parameter x should be an array of shape (batch_size\
-                , input_dim) with both dimensions larger than 0")
+        # if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
+        #     raise ValueError("Parameter x should be an array of shape (batch_size\
+        #         , input_dim) with both dimensions larger than 0")
         
+        assert(len(x[0]) == self.n_in)
+
         self._cache_current = np.transpose(x)
 
 
@@ -170,6 +172,7 @@ class LinearLayer(Layer):
         for line in Z:
             line = np.add(line, self._b)
         
+        assert(len(Z[0]) == self.n_out) 
         return Z
 
     def backward(self, grad_z):
@@ -539,6 +542,9 @@ def example_main():
     x = dat[:, :4]
     y = dat[:, 4:]
 
+    # print(x)
+    # print(y)
+
     split_idx = int(0.8 * len(x))
 
     x_train = x[:split_idx]
@@ -561,6 +567,10 @@ def example_main():
     )
 
     trainer.train(x_train_pre, y_train)
+
+    # print(x_train_pre)
+    # print(y_train)
+
     print("Train loss = ", trainer.eval_loss(x_train_pre, y_train))
     print("Validation loss = ", trainer.eval_loss(x_val_pre, y_val))
 
