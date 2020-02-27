@@ -376,7 +376,6 @@ class Trainer(object):
 
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
-
         data_len = input_dataset.shape[1]
         targets = np.array([t for t in target_dataset])
         inputs = np.append(input_dataset, targets, axis=1)
@@ -407,20 +406,7 @@ class Trainer(object):
         if self._loss_layer == None:
             raise ValueError("Loss layer is None")
         
-        input_data_points = input_dataset.shape[0]
-        input_dim = input_dataset.shape[1]
-        target_data_points = target_dataset.shape[0]
-        target_dim = target_dataset.shape[1]
-
-        if (input_data_points != target_data_points):
-            raise ValueError("Number of data points in input and target dataset are not consistent")
-        
-        for row in range(input_data_points):
-            if len(input_dataset[row]) != input_dim:
-                raise ValueError("Dimensions of input dataset is not consistent")
-        for row in range(target_data_points):
-            if len(target_dataset[row]) != target_dim:
-                raise ValueError("Dimensions of target dataset is not consistent")
+        self.checkDatasetsDimensions(input_dataset, target_dataset)
 
         for epoch in range(self.nb_epoch):
             if self.shuffle_flag:
@@ -459,9 +445,24 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_evaluation_data_points, ).
         """
-
+        self.checkDatasetsDimensions(input_dataset, target_dataset)
         predictions = self.network.forward(input_dataset)
         return self._loss_layer.forward(predictions, target_dataset)
+
+    def checkDatasetsDimensions(self, input_dataset, target_dataset):
+        input_data_points = len(input_dataset)
+        input_dim = len(input_dataset[0])
+        target_data_points = len(target_dataset)
+        target_dim = len(target_dataset[0])
+
+        if (input_data_points != target_data_points):
+            raise ValueError("Number of data points in input and target dataset are not consistent")
+        for row in range(input_data_points):
+            if len(input_dataset[row]) != input_dim:
+                raise ValueError("Dimensions of input dataset is not consistent")
+        for row in range(target_data_points):
+            if len(target_dataset[row]) != target_dim:
+                raise ValueError("Dimensions of target dataset is not consistent")
 
 class Preprocessor(object):
     """
