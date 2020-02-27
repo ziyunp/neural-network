@@ -1,24 +1,52 @@
 import numpy as np
 import pickle
 
-from nn_lib import *
-
 import torch
-import torchvision.transforms as transforms
-from sklearn.metrics import classification_report, confusion_matrix
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
 
-class ClaimClassifier(torch.nn.Module):
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import classification_report, confusion_matrix, \
+    recall_score, precision_recall_curve, average_precision_score
 
-    def __init__(self, hidden_size):
+import matplotlib.pyplot as plt
+
+# customised classes
+from claim_dataset import *
+from claim_net import *
+
+class ClaimClassifier():
+
+    def __init__(self, input_dim, output_dim, neurons, activations, loss_func, optimiser, learning_rate, epoch, batch_size):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
         """
-        super(ClaimClassifier, self).__init__()
-        self.batch_size = 0
-        self.input_size = 9
-        self.hidden_size = hidden_size
-        self.output_size = 1
+        self._net = ClaimNet(input_dim, output_dim, neurons, activations)
+        print("=== The created network is: ===")
+        print(self._net)
+        print()
+        self._epoch = epoch
+        self._scaler = None
+        self._batch_size = batch_size
+
+        if loss_func == "bce":
+            self._loss_func = nn.BCELoss() 
+        elif loss_func == "mse":
+            self._loss_func = nn.MSELoss()
+        elif loss_func == "cross_entropy":
+            self._loss_func = nn.CrossEntropyLoss()
+
+        print("=== The parameters are : ===")
+        for name, param in self._net.named_parameters():
+            print(name, param.data)
+        print()
+        if optimiser == "sgd":
+            self._optimiser = optim.SGD(self._net.parameters(), learning_rate)
+        elif optimiser == "adam":
+            self._optimiser = optim.Adam(self._net.parameters(), learning_rate)
+
 
     def _preprocessor(self, X_raw):
         """Data preprocessing function.
@@ -36,14 +64,12 @@ class ClaimClassifier(torch.nn.Module):
         ndarray
             A clean data set that is used for training and prediction.
         """
-        # YOUR CODE HERE
+        if self._scaler == None:
+            self._scaler = MinMaxScaler()
+            self._scaler.fit(X_raw)
+        X_raw = self._scaler.transform(X_raw)
 
-        self.batch_size = X_raw.shape[0]
-        self.input_size = X_raw.shape[1]
-
-        preprocessor = Preprocessor(X_raw)
-
-        return preprocessor.apply(X_raw)
+        return np.array(X_raw)
 
     def fit(self, X_raw, y_raw):
         """Classifier training function.
@@ -62,77 +88,45 @@ class ClaimClassifier(torch.nn.Module):
         self: (optional)
             an instance of the fitted model
         """
-
-        # if (not y_raw):
-        #     print("y_raw not provided")
-        #     return
+        # Create a dataset loader
+        dataset = ClaimDataset(self._preprocessor(X_raw), y_raw)
         
-        X_clean = self._preprocessor(X_raw)
-        # X_clean = torch.from_numpy(self._preprocessor(X_raw))
-        # x_batch = torch.utils.data.DataLoader(X_clean, batch_size=4,
-        #                                   shuffle=False, num_workers=0) # TODO requiring dataset object
-        # y_raw = torch.from_numpy(y_raw)
-        # y_batch = torch.utils.data.DataLoader(y_raw, batch_size=4,
-        #                                   shuffle=False, num_workers=0)
+        # Training
+        pri = False
+        for e in range(self._epoch):
+            dataset_loader = DataLoader(dataset, batch_size=self._batch_size, shuffle=True)
+            losses = []
+            for x_batch, y_batch in dataset_loader:
+                # Forward
+                output = self._net(x_batch)
 
-        # print(X_clean)
+                # Loss
+                loss = self._loss_func(output, y_batch)
+                if not pri:
+                    # print("=== Print out the backprop orders: ===")
+                    # print("The 1st should be Loss function:   ", loss.grad_fn)
+                    # print("The 2nd should be the sigmoid:     ", loss.grad_fn.next_functions[0][0])
+                    # print("The 3rd should be the liner layer: ", loss.grad_fn.next_functions[0][0].next_functions[0][0])
+                    # print("The 4th should be the sigmoid:     ", loss.grad_fn.next_functions[0][0].next_functions[0][0].next_functions[0][0])
+                    # print()
+                    pri = True
+                losses.append(loss.item())
 
-        self.model = torch.nn.Sequential(     # TODO design a suitable architecture and why are we using sequential?
-            torch.nn.Linear(self.input_size, self.hidden_size),
-            torch.nn.ReLU(),
-            torch.nn.Linear(self.hidden_size, self.output_size),
-            torch.nn.Sigmoid(),
-        )
+                # Backprop
+                # print("=== Gradient change: ===")
+                # print("ll1.bias.grad before backward: ") 
+                # print(self._net._ll1.bias.grad)
+                self._net.zero_grad()
+                loss.backward()
+                # print("ll1.bias.grad after backward: ") 
+                # print(self._net._ll1.bias.grad)
+                # print()
 
-        loss_fn = torch.nn.MSELoss(reduction='sum')
+                # Optimise
+                self._optimiser.step()
+            print(e, " : ", sum(losses)/len(losses))
 
-        learning_rate = 1e-4
-
-        for t in range(100):     # TODO epoch not t!
-            running_loss = 0.0
-            x_batch = np.array([X_clean[0]])
-            y_batch = np.array([y_raw[0]])
-            for i in range(1, len(X_clean)):   # TODO after using dataset object, change this
-                if (not i % 8 == 0):
-                    x_batch = np.append(x_batch, [X_clean[i]], axis=0)
-                    y_batch = np.append(y_batch, [y_raw[i]], axis=0)
-                else:
-                    x_batch = torch.from_numpy(x_batch)
-                    y_batch = torch.from_numpy(y_batch)
-
-                    # Forward pass
-                    y_pred = self.model(x_batch.float()) # X_clean needs to be a tensor
-
-                    # print(y_pred)
-                    # print(y_raw)
-
-
-                    loss = loss_fn(y_pred, y_batch.float())
-                    running_loss += loss.item()
-                    if i % 800 == 0:    # print every 2000 mini-batches
-                        print('[%d, %5d] loss: %.3f' %
-                            (t, i, running_loss / 800))
-                        running_loss = 0.0
-
-                    # Zero the gradients before running the backward pass.
-                    self.model.zero_grad()
-
-                    # Backward pass
-                    loss.backward()
-
-                    with torch.no_grad():
-                        for param in self.model.parameters():
-                            param -= learning_rate * param.grad
-
-                    x_batch = np.array([X_clean[i]])
-                    y_batch = np.array([y_raw[i]])
-
-        # self = model
-
-        return self
-        
-    def forward(self, x):
-        return self.model(x)
+        self.save_model()
 
     def predict(self, X_raw):
         """Classifier probability prediction function.
@@ -153,14 +147,32 @@ class ClaimClassifier(torch.nn.Module):
         """
 
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
-        X_clean = torch.from_numpy(self._preprocessor(X_raw))
+        X_clean = torch.from_numpy(self._preprocessor(X_raw)).float()
+        
+        # Produce raw predictions
+        predictions = self._net(X_clean)
 
-        # YOUR CODE HERE
-        y_predict = self.model(X_clean.float())
- 
-        return y_predict
+        # Convert to binary classes
+        predictions_binary = []
+        for i in range (len(predictions)):
+            if (predictions[i] < 0.5):
+                predictions_binary.append(0)
+            else:
+                predictions_binary.append(1)
+        return np.asarray(torch.Tensor.cpu(predictions).detach().numpy())
 
-    def evaluate_architecture(self):
+    def convert_to_binary(self, predictions, threshold = 0.5):
+        """Convert to binary classes
+        """
+        predictions_binary = []
+        for i in range (len(predictions)):
+            if (predictions[i] < threshold):
+                predictions_binary.append(0)
+            else:
+                predictions_binary.append(1)
+        return np.asarray(predictions_binary)
+
+    def evaluate_architecture(self, prediction, annotation):
         """Architecture evaluation utility.
 
         Populate this function with evaluation utilities for your
@@ -170,19 +182,20 @@ class ClaimClassifier(torch.nn.Module):
         if necessary.
         """
         
-        # print("=== Performance of the model on the training data ===")
-        # print(confusion_matrix(self.y_train, self.predict_train))
-        # print(classification_report(self.y_train, self.predict_train))
+        print("=== Confusion Matrix ===")
+        print(confusion_matrix(annotation, prediction))
 
-        # print("=== Performance of the model on the test data ===")
-        # print(confusion_matrix(self.y_test, self.predict_test))
-        # print(classification_report(self.y_test, self.predict_test))
+        print("=== Classification Report ===")
+        print(classification_report(annotation, prediction))
+
 
     def save_model(self):
         # Please alter this file appropriately to work in tandem with your load_model function below
         with open('part2_claim_classifier.pickle', 'wb') as target:
             pickle.dump(self, target)
 
+    def set_epoch(self, epoch):
+        self._epoch = epoch
 
 def load_model():
     # Please alter this section so that it works in tandem with the save_model method of your class
@@ -199,53 +212,139 @@ def ClaimClassifierHyperParameterSearch():
 
     The function should return your optimised hyper-parameters. 
     """
+    # Hyperparameter lists
+    # 
 
     return  # Return the chosen hyper parameters
 
+def over_sampling(dataset, ratio):
+    """Performs oversampling to the given dataset according to ratio 
+    Parameters
+    ----------
+    dataset : raw dataset with 9 attributes appended with 1 label 
+    ratio : a float from 0 to 1, any number larger then 1 will be treated as 1,
+            smaller will be treated as 0
+            make_claim (label 1) to not_make_claim (label 0)
+
+    Returns
+    -------
+    ndarray : Dataset after being oversampled
+    """
+    label1 = []
+    label0 = []
+    for data in dataset:
+        if data[-1] == 1:
+            label1.append(data)
+        else:
+            label0.append(data)
+    if ratio < 0:
+        ratio = 0
+    elif ratio > 1:
+        ratio = 1
+    current_ratio = len(label1) / len(label0)
+    for _ in range(int(ratio / current_ratio)):
+        label0 = np.append(label0, label1, 0)
+        
+    return label0
+
+def plot_precision_recall(probability, annotation):
+    """Plot precisin-recall curve
+
+    Parameters
+    ----------
+    probability : ndarray, the probability of the label being 1
+    annotation: ndarray, the actual labels
+    """
+    precision, recall, thresholds = \
+        precision_recall_curve(annotation, probability, pos_label=1)
+    ap = average_precision_score(annotation, probability, pos_label=1)
+    plt.figure(figsize=(8, 12))
+
+    plt.subplot(211)
+    plt.step(recall, precision)
+    plt.title('2-class Precision-Recall curve for make_claim: AP={0:0.4f}'.format(ap), fontsize=20)
+    plt.xlabel('Recall', fontsize=20)
+    plt.ylabel('Precision', fontsize=20)
+
+    plt.subplot(212)
+    plt.hist(probability)
+    plt.title('Distribution of Positive Probability', fontsize=20)
+    plt.xlabel('Probability', fontsize=20)
+    plt.ylabel('Portion', fontsize=20)
+
+    plt.show()
+
 def main():
-    input_dim = 9
-    hidden_layers = 16
     
-    # drv_age1, vh_age, vh_cyl, vh_din, pol_bonus, vh_sale_begin, vh_sale_end, 
-    # vh_value, vh_speed, claim_amount, made_claim
-    dataset = np.genfromtxt('part2_training_data.csv',delimiter=',',skip_header=1)
+    # Read the dataset
+    dataset = np.genfromtxt('part2_training_data.csv', delimiter=',', skip_header=1)
     np.random.shuffle(dataset)
 
-    x = dataset[:, :input_dim]
-    y = dataset[:, input_dim+1:] # not including claim_amount
+    x = dataset[:, :9]
+    y = dataset[:, 10:] # not including claim_amount 
 
-    split_idx_train = int(0.6 * len(x))
-    split_idx_val = int((0.6 + 0.2) * len(x))
+    split_idx_train = int(0.8 * len(dataset))
+    split_idx_val = int((0.8 + 0.1) * len(dataset))
 
-    x_train = x[:split_idx_train]
-    y_train = y[:split_idx_train]
     x_val = x[split_idx_train:split_idx_val]
     y_val = y[split_idx_train:split_idx_val]
     x_test = x[split_idx_val:]
     y_test = y[split_idx_val:]
 
-    claim_classifier = ClaimClassifier(hidden_layers)
+    x_train = x[:split_idx_train]
+    y_train = y[:split_idx_train]
 
-    claim_classifier.fit(x_train, y_train)
+    # Oversampling
+    train = np.append(x_train, y_train, 1)
+    train = over_sampling(train, 1)
+    np.random.shuffle(train)
+    x_train = train[:, :9]
+    y_train = train[:, 9:]
 
-    # prediction_train = claim_classifier.register_parameter(x_train)
-    # prediction_test = claim_classifier.predict(x_test)
-    prediction_val = claim_classifier.predict(x_val)
+    # Create a network
+    claim_classifier = None
+    # claim_classifier = load_model()
+    if claim_classifier == None:
+        input_dim = 9
+        output_dim = 1
+        neurons = [6, 6, 6, 6, 6]
+        activations = ["relu", "sigmoid"]
+        loss_fun = "bce"
+        optimiser = "sgd"
+        learning_rate = 1e-3
+        epoch = 1
+        batch_size = 4
+        claim_classifier = ClaimClassifier(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
+    # claim_classifier.set_epoch(2)
 
-    # TODO: Evaluation of prediction_train and prediction_test
-    preds = np.squeeze(prediction_val.detach().numpy())
-    with np.nditer(preds, op_flags=['readwrite']) as it:
-        for x in it:
-            if x < 0.5:
-                x[...] = 0
-            else:
-                x[...] = 1
-    targets = np.squeeze(y_val)
-    accuracy = (preds == targets).mean()
-    print(preds)
-    print(targets)
-    print("Validation accuracy: {}".format(accuracy))
+    recalls = []
+    for i in range(30): 
+        # Train the network
+        claim_classifier.fit(x_train, y_train)
+        claim_classifier.save_model()
+
+        #Predict
+        prob_train = claim_classifier.predict(x_train)
+        prediction_train = claim_classifier.convert_to_binary(prob_train)
     
+        # Evaluation
+        print()
+        print("------- The result of ", i, "is: ------")
+        claim_classifier.evaluate_architecture(prediction_train.squeeze(), y_train)
+        recalls.append(recall_score(y_train, prediction_train.squeeze(), average='macro'))
+
+    #Predict for validation
+    prob_val = claim_classifier.predict(x_val)
+    prediction_val = claim_classifier.convert_to_binary(prob_val)
+    # prediction_test = claim_classifier.predict(x_test)
+
+    # Evaluation for validation
+    print()
+    print("------- The result of validation set is: ------")
+    claim_classifier.evaluate_architecture(prediction_val.squeeze(), y_val)
+    # claim_classifier.evaluate_architecture(prediction_test.squeeze(), y_test)
+
+    plot_precision_recall(prob_val, y_val)
 
 if __name__ == "__main__":
     main()
