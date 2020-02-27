@@ -8,7 +8,8 @@ from torch.utils.data import DataLoader
 
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import classification_report, confusion_matrix, \
-    recall_score, precision_recall_curve, average_precision_score
+    precision_recall_curve, average_precision_score, roc_auc_score, \
+    roc_curve
 
 import matplotlib.pyplot as plt
 
@@ -18,7 +19,16 @@ from claim_net import *
 
 class ClaimClassifier():
 
-    def __init__(self, input_dim, output_dim, neurons, activations, loss_func, optimiser, learning_rate, epoch, batch_size):
+    def __init__(self, 
+                 input_dim, 
+                 output_dim, 
+                 neurons, 
+                 activations, 
+                 loss_func, 
+                 optimiser, 
+                 learning_rate, 
+                 max_epoch, 
+                 batch_size):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary. 
@@ -27,7 +37,7 @@ class ClaimClassifier():
         print("=== The created network is: ===")
         print(self._net)
         print()
-        self._epoch = epoch
+        self._max_epoch = max_epoch
         self._scaler = None
         self._batch_size = batch_size
 
@@ -71,7 +81,7 @@ class ClaimClassifier():
 
         return np.array(X_raw)
 
-    def fit(self, X_raw, y_raw):
+    def fit(self, X_raw, y_raw, X_val = None, y_val = None, early_stop = None):
         """Classifier training function.
 
         Here you will implement the training function for your classifier.
@@ -82,6 +92,12 @@ class ClaimClassifier():
             An array, this is the raw data as downloaded
         y_raw : ndarray (optional)
             A one dimensional array, this is the binary target variable
+        X_val : ndarray (optional)
+            An array, this is the validation data as downloaded
+        y_val : ndarray (optional)
+            A one dimensional array, this is the binary target variable
+        early_stop : int (optional)
+            The limit where the early stop should happen
 
         Returns
         -------
@@ -92,41 +108,49 @@ class ClaimClassifier():
         dataset = ClaimDataset(self._preprocessor(X_raw), y_raw)
         
         # Training
-        pri = False
-        for e in range(self._epoch):
-            dataset_loader = DataLoader(dataset, batch_size=self._batch_size, shuffle=True)
+        ap_hist = []
+        roc_auc_hist = []
+        loss_hist = []
+        for e in range(self._max_epoch):
+            # Update
             losses = []
+            dataset_loader = DataLoader(dataset, batch_size=self._batch_size, shuffle=True)
             for x_batch, y_batch in dataset_loader:
                 # Forward
                 output = self._net(x_batch)
 
                 # Loss
                 loss = self._loss_func(output, y_batch)
-                if not pri:
-                    # print("=== Print out the backprop orders: ===")
-                    # print("The 1st should be Loss function:   ", loss.grad_fn)
-                    # print("The 2nd should be the sigmoid:     ", loss.grad_fn.next_functions[0][0])
-                    # print("The 3rd should be the liner layer: ", loss.grad_fn.next_functions[0][0].next_functions[0][0])
-                    # print("The 4th should be the sigmoid:     ", loss.grad_fn.next_functions[0][0].next_functions[0][0].next_functions[0][0])
-                    # print()
-                    pri = True
                 losses.append(loss.item())
 
-                # Backprop
-                # print("=== Gradient change: ===")
-                # print("ll1.bias.grad before backward: ") 
-                # print(self._net._ll1.bias.grad)
+                # Backward
                 self._net.zero_grad()
                 loss.backward()
-                # print("ll1.bias.grad after backward: ") 
-                # print(self._net._ll1.bias.grad)
-                # print()
 
                 # Optimise
                 self._optimiser.step()
-            print(e, " : ", sum(losses)/len(losses))
+            
+            # Average loss
+            average_loss = sum(losses)/len(losses)
+            loss_hist.append(average_loss)
+            print("Epoch ", e, " : ", average_loss)
 
-        self.save_model()
+            # Evaluate
+            prediction = self.predict(X_val)
+            average_precision = average_precision_score(y_val, prediction)
+            ap_hist.append(average_precision)
+            roc_auc = roc_auc_score(y_val, prediction)
+            roc_auc_hist.append(roc_auc)
+            print("Epoch ", e, " : ", roc_auc)
+            print("Epoch ", e, " : ", average_precision)
+
+            # Early stopping
+            if e > 2:
+                if (abs(average_precision - ap_hist[-2]) + \
+                    abs(ap_hist[-2] - ap_hist[-3])) / 2 < early_stop:
+                        print("Early stopping ...")
+                        break
+
 
     def predict(self, X_raw):
         """Classifier probability prediction function.
@@ -148,17 +172,10 @@ class ClaimClassifier():
 
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
         X_clean = torch.from_numpy(self._preprocessor(X_raw)).float()
-        
+
         # Produce raw predictions
         predictions = self._net(X_clean)
 
-        # Convert to binary classes
-        predictions_binary = []
-        for i in range (len(predictions)):
-            if (predictions[i] < 0.5):
-                predictions_binary.append(0)
-            else:
-                predictions_binary.append(1)
         return np.asarray(torch.Tensor.cpu(predictions).detach().numpy())
 
     def convert_to_binary(self, predictions, threshold = 0.5):
@@ -172,7 +189,7 @@ class ClaimClassifier():
                 predictions_binary.append(1)
         return np.asarray(predictions_binary)
 
-    def evaluate_architecture(self, prediction, annotation):
+    def evaluate_architecture(self, probability, annotation):
         """Architecture evaluation utility.
 
         Populate this function with evaluation utilities for your
@@ -180,14 +197,21 @@ class ClaimClassifier():
 
         You can use external libraries such as scikit-learn for this
         if necessary.
+        Paramters
+        ---------
+        probability : ndarray
+        annotation : ndarray
         """
-        
+        # Convert the predicted probability to predicion
+        prediction = self.convert_to_binary(probability)
+
         print("=== Confusion Matrix ===")
         print(confusion_matrix(annotation, prediction))
+        print()
 
         print("=== Classification Report ===")
         print(classification_report(annotation, prediction))
-
+        print()
 
     def save_model(self):
         # Please alter this file appropriately to work in tandem with your load_model function below
@@ -320,28 +344,25 @@ def main():
     recalls = []
     for i in range(30): 
         # Train the network
-        claim_classifier.fit(x_train, y_train)
+        claim_classifier.fit(x_train, y_train, x_val, y_val, 0.0002)
         claim_classifier.save_model()
 
         #Predict
         prob_train = claim_classifier.predict(x_train)
-        prediction_train = claim_classifier.convert_to_binary(prob_train)
     
         # Evaluation
         print()
         print("------- The result of ", i, "is: ------")
-        claim_classifier.evaluate_architecture(prediction_train.squeeze(), y_train)
-        recalls.append(recall_score(y_train, prediction_train.squeeze(), average='macro'))
+        claim_classifier.evaluate_architecture(prob_train, y_train)
 
     #Predict for validation
     prob_val = claim_classifier.predict(x_val)
-    prediction_val = claim_classifier.convert_to_binary(prob_val)
     # prediction_test = claim_classifier.predict(x_test)
 
     # Evaluation for validation
     print()
     print("------- The result of validation set is: ------")
-    claim_classifier.evaluate_architecture(prediction_val.squeeze(), y_val)
+    claim_classifier.evaluate_architecture(prob_val, y_val)
     # claim_classifier.evaluate_architecture(prediction_test.squeeze(), y_test)
 
     plot_precision_recall(prob_val, y_val)
