@@ -376,15 +376,11 @@ class Trainer(object):
 
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
-        print("shuffle 1")
+        checkDatasetsDimensions(input_dataset, target_dataset)
         data_len = input_dataset.shape[1]
-        print("shuffle 2")
         targets = np.array([t for t in target_dataset])
-        print("shuffle 3")
         inputs = np.append(input_dataset, targets, axis=1)
-        print("shuffle 4")
         np.random.shuffle(inputs)
-        print("shuffle 5")
         return (inputs[:,:data_len], inputs[:, data_len:])
 
     def train(self, input_dataset, target_dataset):
@@ -407,14 +403,14 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_training_data_points, ).
         """
-        print("train1")
+        
 
         if self._loss_layer == None:
             raise ValueError("Loss layer is None")
-        print("train2")
         
-        self.checkDatasetsDimensions(input_dataset, target_dataset)
-        print("train3")
+        
+        checkDatasetsDimensions(input_dataset, target_dataset)
+        
 
         for epoch in range(self.nb_epoch):
             
@@ -441,7 +437,7 @@ class Trainer(object):
                 loss_grad = self._loss_layer.backward()
                 gradients = self.network.backward(loss_grad)
                 self.network.update_params(self.learning_rate)
-        print("train5")
+        
 
 
     def eval_loss(self, input_dataset, target_dataset):
@@ -454,30 +450,12 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_evaluation_data_points, ).
         """
-        print("eval1")
-
-        self.checkDatasetsDimensions(input_dataset, target_dataset)
-        print("eval2")
+        
+        checkDatasetsDimensions(input_dataset, target_dataset)
         predictions = self.network.forward(input_dataset)
-        print("eval3")
         return self._loss_layer.forward(predictions, target_dataset)
 
-    def checkDatasetsDimensions(self, input_dataset, target_dataset):
-        if target_dataset.ndim != 2 or input_dataset.ndim != 2:
-            raise ValueError("Datasets must have 2 dimensions")
-        input_data_points = len(input_dataset)
-        input_dim = len(input_dataset[0])
-        target_data_points = len(target_dataset)
-        target_dim = len(target_dataset[0])
-
-        if (input_data_points != target_data_points):
-            raise ValueError("Number of data points in input and target dataset are not consistent")
-        for row in range(input_data_points):
-            if len(input_dataset[row]) != input_dim:
-                raise ValueError("Dimensions of input dataset is not consistent")
-        for row in range(target_data_points):
-            if len(target_dataset[row]) != target_dim:
-                raise ValueError("Dimensions of target dataset is not consistent")
+    
 
 class Preprocessor(object):
     """
@@ -539,6 +517,24 @@ class Preprocessor(object):
                     initialise the preprocessor")
 
         return np.add(np.multiply(data, self.params), self.col_min)
+
+def checkDatasetsDimensions(input_dataset, target_dataset):
+    if target_dataset.ndim != 2 or input_dataset.ndim != 2:
+        raise ValueError("Datasets must have 2 dimensions")
+    
+    input_data_points = len(input_dataset)
+    input_dim = len(input_dataset[0])
+    target_data_points = len(target_dataset)
+    target_dim = len(target_dataset[0])
+
+    if (input_data_points != target_data_points):
+        raise ValueError("Number of data points in input and target dataset are not consistent")
+    for row in range(input_data_points):
+        if len(input_dataset[row]) != input_dim:
+            raise ValueError("Dimensions of input dataset is not consistent")
+    for row in range(target_data_points):
+        if len(target_dataset[row]) != target_dim:
+            raise ValueError("Dimensions of target dataset is not consistent")
 
 def example_main():
     input_dim = 4
