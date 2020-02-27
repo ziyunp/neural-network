@@ -358,7 +358,7 @@ class Trainer(object):
         if loss_fun == "mse":
             self._loss_layer = MSELossLayer()
         # two possible loss_fun values for CrossEntropy given in this file
-        elif loss_fun == "cross_entropy" or loss_fun == "cross_entropy":
+        elif loss_fun == "cross_entropy" or loss_fun == "bce":
             self._loss_layer = CrossEntropyLossLayer()
         else:
             raise ValueError("Loss function must be either 'mse', 'cross_entropy' or 'bce'.")
