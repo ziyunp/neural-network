@@ -88,28 +88,39 @@ class PricingModel():
         imp_NA = SimpleImputer(missing_values=np.nan, strategy="constant", fill_value="NA") 
         imp_zero = SimpleImputer(missing_values=0, strategy="constant", fill_value=0) 
         imp_mean_nan = SimpleImputer(missing_values=np.nan, strategy="mean")     
-        imp_mean_zero = SimpleImputer(missing_values=0, strategy="mean")     
+        imp_mean_zero = SimpleImputer(missing_values=0, strategy="mean")   
+
         # replace nan and 0 occurrences in NUMERICAL type with mean
         NUM = imp_mean_nan.fit_transform(NUM)
         NUM = imp_mean_zero.fit_transform(NUM)
         # replace nan occurrences in ORDINAL type with "NA"
         ORD = imp_NA.fit_transform(ORD)
         # for CATEGORICAL type, check if values are string/numeric
+
         CAT = imp_NA.fit_transform(CAT)
-        var = 0
+        
         for i in range(CAT.shape[1]):
             if isinstance(CAT[0][i], float):
                 imputed_col = imp_zero.fit_transform(CAT[:,i].reshape(-1,1))
                 imputed_flat = imputed_col.flatten()
+                imputed_str = [str(imp) for imp in imputed_flat]
                 for row in range(CAT.shape[0]):
-                    CAT[row][i] = imputed_flat[row]
+                    CAT[row][i] = imputed_str[row]
+        
+        oe = preprocessing.OrdinalEncoder(categories=[['Mini','Median1','Median2','Maxi'],['Retired','WorkPrivate','Professional','AllTrips']])
 
-        # lb = preprocessing.LabelBinarizer()
-        # for i in range (X_clean.shape[1]):  
-        #     if not isinstance(X_clean[0][i], (float,int)): # if not numerical value
-        #         sparse_matrix = lb.fit_transform(X_clean[:,i])
-        #         for row in range (len(sparse_matrix)):
-        #             X_clean[row][i] = sparse_matrix[row]
+        # Transform categorical strings into binary labels
+        for i in range (CAT.shape[1]):  
+            lb = preprocessing.LabelBinarizer()
+            labels = lb.fit_transform(CAT[:,i])
+            if labels.shape[1] == 1:
+                CAT[:,i] = labels.flatten()
+            else: 
+                #  add arrays of labels into position?
+                for row in range(labels.shape[0]):
+                    CAT[row][i] = labels[row].flatten()
+        ORD = oe.fit_transform(ORD)
+
         
         # Normalise with MinMaxScaler
         # scaler = preprocessing.MinMaxScaler()
