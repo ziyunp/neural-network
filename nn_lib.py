@@ -406,16 +406,21 @@ class Trainer(object):
 
         if self._loss_layer == None:
             raise ValueError("Loss layer is None")
-
-        input_dim = len(input_dataset[0])
-        target_dim = len(target_dataset[0])
+        
+        input_dim = input_dataset.shape[0]
+        input_data_points = input_dataset.shape[1]
+        target_dim = target_dataset.shape[0]
+        target_data_points = target_dataset.shape[1]
+        if (input_data_points != target_data_points):
+            raise ValueError("Number of data points in input and target dataset are not consistent")
+        
         for row in range(input_dataset.shape[0]):
             if len(input_dataset[row]) != input_dim:
                 raise ValueError("Dimensions of input dataset is not consistent")
         for row in range(target_dataset.shape[0]):
             if len(target_dataset[row]) != target_dim:
                 raise ValueError("Dimensions of target dataset is not consistent")
-            
+
         for epoch in range(self.nb_epoch):
             if self.shuffle_flag:
                 s_input, s_target = self.shuffle(input_dataset, target_dataset)
