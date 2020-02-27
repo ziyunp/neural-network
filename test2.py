@@ -10,4 +10,4 @@ print(y_raw)
 
 
 cc = ClaimClassifier(hidden_size=5)
-cc.fit(X_raw, y_raw)
+cc.fit(X_raw.to_numpy(), y_raw.to_numpy())

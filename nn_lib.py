@@ -95,28 +95,12 @@ class SigmoidLayer(Layer):
         self._cache_current = None
 
     def forward(self, x):
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
         self._cache_current = np.array(1 / (1 + np.exp(-x)))
         return self._cache_current
 
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
-
     def backward(self, grad_z):
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
-
         # taking the element wise products
         return grad_z * self._cache_current * (1 - self._cache_current)
-
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
-
 
 class ReluLayer(Layer):
     """
@@ -128,29 +112,14 @@ class ReluLayer(Layer):
 
     # returns for each element in array x the maximum of the element and 0
     def forward(self, x):
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
         self._cache_current = np.maximum(0, x)
         return self._cache_current
 
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
-
     # returns grad_z with elements less than or equal to 0 set to zero
     def backward(self, grad_z):
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
         grad = np.array(grad_z,copy=True)
         grad[self._cache_current <= 0] = 0
         return grad
-
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
-
 
 class LinearLayer(Layer):
     """
@@ -167,9 +136,6 @@ class LinearLayer(Layer):
         self.n_in = n_in
         self.n_out = n_out
 
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
         self._W = np.stack([xavier_init(n_out) for i in range(n_in)])
         self._W = np.asarray(self._W)
         self._b = np.zeros(n_out)
@@ -177,10 +143,6 @@ class LinearLayer(Layer):
         self._cache_current = None
         self._grad_W_current = None
         self._grad_b_current = None
-
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
 
     def forward(self, x):
         """
@@ -195,23 +157,20 @@ class LinearLayer(Layer):
         Returns:
             {np.ndarray} -- Output array of shape (batch_size, n_out)
         """
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
+
+        if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
+            raise ValueError("Parameter x should be an array of shape (batch_size\
+                , input_dim) with both dimensions larger than 0")
         
         self._cache_current = np.transpose(x)
 
 
-        mmx = np.dot(x, self._W)
+        Z = np.dot(x, self._W)
 
-        for line in mmx:
+        for line in Z:
             line = np.add(line, self._b)
         
-        return mmx
-
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
+        return Z
 
     def backward(self, grad_z):
         """
@@ -227,19 +186,12 @@ class LinearLayer(Layer):
             {np.ndarray} -- Array containing gradient with repect to layer
                 input, of shape (batch_size, n_in).
         """
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
 
         self._grad_W_current = np.dot(self._cache_current, grad_z)
         # CHECK HERE
         self._grad_b_current = np.dot(np.ones(self._cache_current.shape[1]), grad_z)
 
         return np.dot(grad_z, np.transpose(self._W))
-
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
 
     def update_params(self, learning_rate):
         """
@@ -249,19 +201,12 @@ class LinearLayer(Layer):
         Arguments:
             learning_rate {float} -- Learning rate of update step.
         """
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
 
         tmp_W = np.add(self._W, np.negative(learning_rate * self._grad_W_current))
         tmp_b = np.add(self._b, np.negative(learning_rate * self._grad_b_current))
 
         self._W = tmp_W
         self._b = tmp_b
-
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
 
 
 class MultiLayerNetwork(object):
@@ -284,9 +229,6 @@ class MultiLayerNetwork(object):
         self.neurons = neurons
         self.activations = activations
 
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
         if len(neurons) != len(activations):
             raise ValueError("The length of activations should be consistent \
                 with neurons")
@@ -295,7 +237,6 @@ class MultiLayerNetwork(object):
         input_n = input_dim
         for i in range(len(neurons)):
             self._layers.append(LinearLayer(input_n, neurons[i]))
-            # CHECK HERE: What happens when activations[i] == "identity"?
             if activations[i] == "relu":
                 self._layers.append(ReluLayer())
             elif activations[i] == "sigmoid":
@@ -303,9 +244,6 @@ class MultiLayerNetwork(object):
             elif activations[i] == "identity":
                 pass
             input_n = neurons[i]
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
 
     def forward(self, x):
         """
@@ -318,11 +256,9 @@ class MultiLayerNetwork(object):
             {np.ndarray} -- Output array of shape (batch_size,
                 #_neurons_in_final_layer)
         """
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
-        if len(x.shape) != 2 or x.shape[1] < 1:
-            raise ValueError("Parameter x should be array of shape (batch_size\
+
+        if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
+            raise ValueError("Parameter x should be an array of shape (batch_size\
                 , input_dim) with both dimensions larger than 0")
 
         layer_input = x
@@ -331,9 +267,6 @@ class MultiLayerNetwork(object):
             layer_output = this_layer.forward(layer_input)
             layer_input = layer_output
         return layer_output
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
 
     def __call__(self, x):
         return self.forward(x)
@@ -350,18 +283,13 @@ class MultiLayerNetwork(object):
             {np.ndarray} -- Array containing gradient with repect to layer
                 input, of shape (batch_size, input_dim).
         """
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
+
         layer_output = grad_z
         layer_input = None
         for this_layer in reversed(self._layers):
             layer_input = this_layer.backward(layer_output)
             layer_output = layer_input
         return layer_input
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
 
     def update_params(self, learning_rate):
         """
@@ -371,15 +299,9 @@ class MultiLayerNetwork(object):
         Arguments:
             learning_rate {float} -- Learning rate of update step.
         """
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
         for this_layer in self._layers:
             if isinstance(this_layer, LinearLayer):
                 this_layer.update_params(learning_rate)
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
 
 
 def save_network(network, fpath):
@@ -432,9 +354,6 @@ class Trainer(object):
         self.loss_fun = loss_fun
         self.shuffle_flag = shuffle_flag
 
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
         self._loss_layer = None
         if loss_fun == "mse":
             self._loss_layer = MSELossLayer()
@@ -442,9 +361,7 @@ class Trainer(object):
             self._loss_layer = CrossEntropyLossLayer()
         else:
             print("Error: Loss function must be either 'mse' or 'bce'.")
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
+
 
     @staticmethod
     def shuffle(input_dataset, target_dataset):
@@ -459,21 +376,12 @@ class Trainer(object):
 
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
         data_len = input_dataset.shape[1]
         targets = np.array([t for t in target_dataset])
         inputs = np.append(input_dataset, targets, axis=1)
         np.random.shuffle(inputs)
         return (inputs[:,:data_len], inputs[:, data_len:])
 
-
-
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #####################################
-        ###########
     def train(self, input_dataset, target_dataset):
         """
         Main training loop. Performs the following steps `nb_epoch` times:
@@ -494,12 +402,11 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_training_data_points, ).
         """
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
+
         if self._loss_layer == None:
-            print ("Error: loss layer is None")
-            return
+            raise ValueError("Loss layer is None")
+        
+        self.checkDatasetsDimensions(input_dataset, target_dataset)
 
         for epoch in range(self.nb_epoch):
             if self.shuffle_flag:
@@ -527,9 +434,6 @@ class Trainer(object):
                 gradients = self.network.backward(loss_grad)
                 self.network.update_params(self.learning_rate)
 
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
 
     def eval_loss(self, input_dataset, target_dataset):
         """
@@ -541,16 +445,24 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_evaluation_data_points, ).
         """
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
+        self.checkDatasetsDimensions(input_dataset, target_dataset)
         predictions = self.network.forward(input_dataset)
         return self._loss_layer.forward(predictions, target_dataset)
 
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
+    def checkDatasetsDimensions(self, input_dataset, target_dataset):
+        input_data_points = len(input_dataset)
+        input_dim = len(input_dataset[0])
+        target_data_points = len(target_dataset)
+        target_dim = len(target_dataset[0])
 
+        if (input_data_points != target_data_points):
+            raise ValueError("Number of data points in input and target dataset are not consistent")
+        for row in range(input_data_points):
+            if len(input_dataset[row]) != input_dim:
+                raise ValueError("Dimensions of input dataset is not consistent")
+        for row in range(target_data_points):
+            if len(target_dataset[row]) != target_dim:
+                raise ValueError("Dimensions of target dataset is not consistent")
 
 class Preprocessor(object):
     """
@@ -567,18 +479,14 @@ class Preprocessor(object):
             - data {np.ndarray} dataset used to determined the parameters for
             the normalization.
         """
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
+
         if data.size == 0:
             raise ValueError("No data in the given dataset")
 
         col_max = np.amax(data, axis=0)
         self.col_min = np.amin(data, axis=0)
         self.params = np.subtract(col_max, self.col_min)
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
+
 
     def apply(self, data):
         """
@@ -590,18 +498,14 @@ class Preprocessor(object):
         Returns:
             {np.ndarray} normalized dataset.
         """
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
+
         if len(data.shape) != 2 or data.shape[1] != len(self.params):
             raise ValueError("Invalid dataset: input dataset should have the\
                 same length on the second dimension as the dataset used to\
                     initialise the preprocessor")
 
         return np.divide(np.subtract(data, self.col_min), self.params)
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
+
 
     def revert(self, data):
         """
@@ -613,18 +517,13 @@ class Preprocessor(object):
         Returns:
             {np.ndarray} reverted dataset.
         """
-        #######################################################################
-        #                       ** START OF YOUR CODE **
-        #######################################################################
+
         if len(data.shape) != 2 or data.shape[1] != len(self.params):
             raise ValueError("Invalid dataset: input dataset should have the\
                 same length on the second dimension as the dataset used to\
                     initialise the preprocessor")
 
         return np.add(np.multiply(data, self.params), self.col_min)
-        #######################################################################
-        #                       ** END OF YOUR CODE **
-        #######################################################################
 
 def example_main():
     input_dim = 4
