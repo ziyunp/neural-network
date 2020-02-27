@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import math
 
 def xavier_init(size, gain=1.0):
     """
@@ -187,7 +188,6 @@ class LinearLayer(Layer):
         """
 
         self._grad_W_current = np.dot(self._cache_current, grad_z)
-        # CHECK HERE
         self._grad_b_current = np.dot(np.ones(self._cache_current.shape[1]), grad_z)
 
         return np.dot(grad_z, np.transpose(self._W))
@@ -413,24 +413,20 @@ class Trainer(object):
             if self.shuffle_flag:
                 input_dataset, target_dataset = self.shuffle(input_dataset, target_dataset)
 
-            # split
-            input_batches = []
-            target_batches = []
             n_datapoints = input_dataset.shape[0]
 
-            n_batches = n_datapoints // self.batch_size 
-            if (n_datapoints % self.batch_size) != 0:
-                n_batches += 1
+            n_batches = math.ceil(n_datapoints/self.batch_size)
+
             for i in range(n_batches):
-                input_batches.append(input_dataset[i * self.batch_size : (i + 1) * self.batch_size])
-                target_batches.append(target_dataset[i * self.batch_size : (i + 1) * self.batch_size])
-            # train with each batch
-            for n in range (n_batches):
-                outputs = self.network.forward(input_batches[n])
-                loss = self._loss_layer.forward(outputs, target_batches[n])
+                # train with each batch
+                input_batch=input_dataset[i * self.batch_size : (i + 1) * self.batch_size]
+                target_batch=target_dataset[i * self.batch_size : (i + 1) * self.batch_size]
+                outputs = self.network.forward(input_batch)
+                loss = self._loss_layer.forward(outputs, target_batch)
                 loss_grad = self._loss_layer.backward()
                 gradients = self.network.backward(loss_grad)
                 self.network.update_params(self.learning_rate)
+
         print("train2")
         
 
