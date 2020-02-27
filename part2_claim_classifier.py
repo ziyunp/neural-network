@@ -256,12 +256,11 @@ def plot_precision_recall(probability, annotation):
     precision, recall, thresholds = \
         precision_recall_curve(annotation, probability, pos_label=1)
     ap = average_precision_score(annotation, probability, pos_label=1)
-
     plt.figure(figsize=(8, 12))
 
     plt.subplot(211)
     plt.step(recall, precision)
-    plt.title('2-class Precision-Recall curve for make_claim: AP={0:0.2f}'.format(ap), fontsize=20)
+    plt.title('2-class Precision-Recall curve for make_claim: AP={0:0.4f}'.format(ap), fontsize=20)
     plt.xlabel('Recall', fontsize=20)
     plt.ylabel('Precision', fontsize=20)
 
