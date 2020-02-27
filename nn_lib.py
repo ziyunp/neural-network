@@ -1,4 +1,3 @@
-import math
 import numpy as np
 import pickle
 
@@ -376,15 +375,10 @@ class Trainer(object):
 
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
-        print("shuffle1")
         order = np.arange(len(input_dataset))
-        print("shuffle2")
         np.random.shuffle(order)
-        print("shuffle3")
         input_dataset = input_dataset[order]
-        print("shuffle4")
         target_dataset = target_dataset[order]
-        print("shuffle5")
         return (input_dataset, target_dataset)
 
     def train(self, input_dataset, target_dataset):
@@ -411,28 +405,25 @@ class Trainer(object):
         print("train1")
         if self._loss_layer == None:
             raise ValueError("Loss layer is None")
-        print("train2")
         
         checkDatasetsDimensions(input_dataset, target_dataset)
-        print("train3")
-
+        
         for epoch in range(self.nb_epoch):
-            print("train4")
+            
             if self.shuffle_flag:
-                input_dataset, target_target = self.shuffle(input_dataset, target_dataset)
-            print("train5")
+                input_dataset, target_dataset = self.shuffle(input_dataset, target_dataset)
+
             # split
             input_batches = []
             target_batches = []
-            print("train6")
             n_datapoints = input_dataset.shape[0]
-            print("train7") 
-            n_batches = math.ceil(n_datapoints/self.batch_size)
-            print("train8") 
+
+            n_batches = n_datapoints // self.batch_size 
+            if (n_datapoints % self.batch_size) != 0:
+                n_batches += 1
             for i in range(n_batches):
                 input_batches.append(input_dataset[i * self.batch_size : (i + 1) * self.batch_size])
                 target_batches.append(target_dataset[i * self.batch_size : (i + 1) * self.batch_size])
-            print("train9")
             # train with each batch
             for n in range (n_batches):
                 outputs = self.network.forward(input_batches[n])
@@ -440,7 +431,8 @@ class Trainer(object):
                 loss_grad = self._loss_layer.backward()
                 gradients = self.network.backward(loss_grad)
                 self.network.update_params(self.learning_rate)
-            print("train10")
+        print("train2")
+        
 
 
     def eval_loss(self, input_dataset, target_dataset):
@@ -453,11 +445,10 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_evaluation_data_points, ).
         """
-        print("eval1")
+        print("eval 1")
         checkDatasetsDimensions(input_dataset, target_dataset)
-        print("eval2")
         predictions = self.network.forward(input_dataset)
-        print("eval3")
+        print("eval 2")
         return self._loss_layer.forward(predictions, target_dataset)
 
     
