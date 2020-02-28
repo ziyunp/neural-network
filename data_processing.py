@@ -43,6 +43,11 @@ NUMERICAL = [Data.pol_bonus, Data.pol_duration, Data.pol_sit_duration, Data.drv_
 
 ORDINAL = [Data.pol_coverage, Data.pol_usage]
 
-CATEGORICAL = [Data.pol_payd, Data.drv_drv2, Data.drv_sex1, Data.drv_sex2, Data.vh_fuel, Data.vh_make, Data.vh_type, Data.commune_code, Data.canton_code, Data.city_district_code, Data.regional_department_code]
+CATEGORICAL = [Data.pol_payd, Data.drv_drv2, Data.drv_sex1, Data.drv_sex2, Data.vh_fuel, Data.vh_type]
 
-EXCLUDED = [Data.id_policy, Data.pol_pay_freq, Data.pol_insee_code, Data.vh_model]
+EXCLUDED = [Data.id_policy, Data.pol_pay_freq, Data.pol_insee_code, Data.commune_code, Data.canton_code, Data.city_district_code, Data.regional_department_code]
+
+# MERGED
+VH_MAKE_MODEL = [Data.vh_make, Data.vh_model]
+# DRV2_SEX_AGE_LIC = [Data.drv_drv2, Data.drv_sex2, Data.drv_age2, Data.drv_age_lic2]
+# COMMUNE_CANTON_DIST_REG = [Data.commune_code, Data.canton_code, Data.city_district_code, Data.regional_department_code]

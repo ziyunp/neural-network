@@ -69,6 +69,15 @@ class PricingModel():
         NUM = []
         ORD = []
         CAT = []
+        VH = []
+
+        # Merge vehicle make & model
+        make = X_raw[:,Data.vh_make.value]
+        model = X_raw[:,Data.vh_model.value]
+        if len(make) == len(model):
+            for i in range(len(make)):
+                VH.append(make[i] + model[i])
+            CAT.append(np.array(VH))
         
         # Split attributes according to data type
         for i in range(len(NUMERICAL)):
@@ -80,6 +89,7 @@ class PricingModel():
         for k in range(len(CATEGORICAL)):
             index = CATEGORICAL[k].value
             CAT.append(X_raw[:,index])
+
         NUM = np.array(NUM).transpose()
         ORD = np.array(ORD).transpose()
         CAT = np.array(CAT).transpose()
