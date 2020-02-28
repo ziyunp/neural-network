@@ -166,7 +166,6 @@ class LinearLayer(Layer):
 
         self._cache_current = np.transpose(x)
 
-
         Z = np.dot(x, self._W)
 
         for line in Z:
@@ -208,12 +207,11 @@ class LinearLayer(Layer):
             learning_rate {float} -- Learning rate of update step.
         """
 
-        tmp_W = np.add(self._W, np.negative(learning_rate * self._grad_W_current))
-        tmp_b = np.add(self._b, np.negative(learning_rate * self._grad_b_current))
-
-        self._W = tmp_W
-        self._b = tmp_b
-
+        self._W = np.add(self._W, np.negative(learning_rate * self._grad_W_current))
+        self._b = np.add(self._b, np.negative(learning_rate * self._grad_b_current))
+        
+        # self._W = tmp_W
+        # self._b = tmp_b
 
 class MultiLayerNetwork(object):
     """
@@ -424,13 +422,12 @@ class Trainer(object):
                 input_dataset, target_dataset = self.shuffle(input_dataset, target_dataset)
 
             n_datapoints = input_dataset.shape[0]
-
             n_batches = math.ceil(n_datapoints/self.batch_size)
             
             # train with each batch
             for i in range(n_batches):
-                input_batch=input_dataset[i * self.batch_size : (i + 1) * self.batch_size]
-                target_batch=target_dataset[i * self.batch_size : (i + 1) * self.batch_size]
+                input_batch = input_dataset[i * self.batch_size : (i + 1) * self.batch_size]
+                target_batch = target_dataset[i * self.batch_size : (i + 1) * self.batch_size]
                 outputs = self.network.forward(input_batch)
                 self._loss_layer.forward(outputs, target_batch)
                 loss_grad = self._loss_layer.backward()
@@ -448,12 +445,16 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_evaluation_data_points, ).
         """
+        print("input dim: ", input_dataset.ndim)
+        print("target dim: ", target_dataset.ndim)
         # if given 1-d array, convert into 2-d 
         if target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
 
         checkDatasetsDimensions(input_dataset, target_dataset)
+        
         predictions = self.network.forward(input_dataset)
+        print("predictions.ndim: ", predictions.ndim)
         return self._loss_layer.forward(predictions, target_dataset)
 
     
