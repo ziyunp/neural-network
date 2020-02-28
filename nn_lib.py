@@ -369,7 +369,7 @@ class Trainer(object):
         self.nb_epoch = nb_epoch
         self.learning_rate = learning_rate
         self.loss_fun = loss_fun
-        self.shuffle_flag = shuffle_flag
+        self.shuffle_flag = False
         # print("loss_fun: ", self.loss_fun, " shuffle: ", self.shuffle_flag)
 
         self._loss_layer = None
@@ -403,7 +403,7 @@ class Trainer(object):
             # print("done")
             # print("shuffle", len(input_dataset), len(target_dataset))
             # print("shuffle", input_dataset.ndim, target_dataset.ndim)
-            print(input_dataset, target_dataset)
+            # print(input_dataset, target_dataset)
             target_dataset = np.array([[t] for t in target_dataset])
 
         assert(len(input_dataset) == len(target_dataset))
@@ -413,8 +413,8 @@ class Trainer(object):
         np.random.shuffle(order)
         input_dataset = input_dataset[order]
         target_dataset = target_dataset[order]
-        if input_dataset.ndim == 2 and target_dataset.ndim == 1:
-            print(input_dataset, target_dataset)
+        # if input_dataset.ndim == 2 and target_dataset.ndim == 1:
+        #     print(input_dataset, target_dataset)
 
         return (input_dataset, target_dataset)
 
@@ -462,6 +462,9 @@ class Trainer(object):
             if self.shuffle_flag:
                 input_dataset, target_dataset = self.shuffle(input_dataset, target_dataset)
             
+            # print(input_dataset) 
+            # print(target_dataset)
+
             # calc num of batches for the given batch_size
             n_datapoints = input_dataset.shape[0]
             n_batches = math.ceil(n_datapoints/self.batch_size)
@@ -602,15 +605,12 @@ def example_main():
     # print(x)
     # print(y)
 
-    print(np.append(x, y, axis=1))
-
-
-    x_s, y_s = Trainer.shuffle(x, y)
+    # x_s, y_s = Trainer.shuffle(x, y)
 
     # print(x_s)
     # print(y_s)
     
-    print(np.append(x_s, y_s, axis=1))
+    # print(np.append(x_s, y_s, axis=1))
 
     split_idx = int(0.8 * len(x))
 
@@ -642,7 +642,7 @@ def example_main():
         nb_epoch=1,
         learning_rate=0.01,
         loss_fun="cross_entropy",
-        shuffle_flag=True,
+        shuffle_flag=False,
     )
 
 
