@@ -43,7 +43,7 @@ class MSELossLayer(Layer):
     @staticmethod
     def _mse(y_pred, y_target):
         print("MSE", np.mean((y_pred - y_target) ** 2))
-        return np.mean((y_pred - y_target) ** 2)
+        return abs(np.mean((y_pred - y_target) ** 2))
 
     @staticmethod
     def _mse_grad(y_pred, y_target):
@@ -86,7 +86,7 @@ class CrossEntropyLossLayer(Layer):
         # print("bceloss5")
         out = -1 / n_obs * np.sum(y_target * np.log(probs))
         print(out)
-        return out
+        return abs(out)
 
     def backward(self):
         y_target, probs = self._cache_current
@@ -492,12 +492,12 @@ class Trainer(object):
         # print("eval", len(input_dataset), len(target_dataset))
         # print("eval", input_dataset.ndim, target_dataset.ndim)
 
-        assert(input_dataset.ndim == target_dataset.ndim)
-        # if input_dataset.ndim == 2 and target_dataset.ndim == 1:
-        #     # print("eval done")
-        #     target_dataset = np.array([[t] for t in target_dataset])
-        #     # print("eval", len(input_dataset), len(target_dataset))
-        #     # print("eval", input_dataset.ndim, target_dataset.ndim)
+        # assert(input_dataset.ndim == target_dataset.ndim)
+        if input_dataset.ndim == 2 and target_dataset.ndim == 1:
+            # print("eval done")
+            target_dataset = np.array([[t] for t in target_dataset])
+            # print("eval", len(input_dataset), len(target_dataset))
+            # print("eval", input_dataset.ndim, target_dataset.ndim)
 
         assert(len(input_dataset) == len(target_dataset))
 
