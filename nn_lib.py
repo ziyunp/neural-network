@@ -449,10 +449,8 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_evaluation_data_points, ).
         """
-        print("input_dataset: ", input_dataset)
-        print("target_dataset: ", target_dataset)
-        print("input shape: ", input_dataset.shape)
-        print("target shape: ", target_dataset.shape)
+        # print("input dim: ", input_dataset.ndim)
+        # print("target dim: ", target_dataset.ndim)
         # if given 1-d array, convert into 2-d 
         if target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
@@ -460,11 +458,11 @@ class Trainer(object):
         checkDatasetsDimensions(input_dataset, target_dataset)
         
         predictions = self.network.forward(input_dataset)
-        print("predictions.shape: ", predictions.shape)
-        loss = self._loss_layer.forward(predictions, target_dataset)
-        print("loss: ", loss)
-        print("loss.shape: ", loss.shape)
-        return loss
+        # print("predictions.ndim: ", predictions.ndim)
+        assert(len(predictions[0]) == len(target_dataset[0]))
+        return self._loss_layer.forward(predictions, target_dataset)
+
+    
 
 class Preprocessor(object):
     """
