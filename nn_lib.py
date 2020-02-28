@@ -401,6 +401,8 @@ class Trainer(object):
         # this breaks it
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
             print("done")
+            print("shuffle", len(input_dataset), len(target_dataset))
+            print("shuffle", input_dataset.ndim, target_dataset.ndim)
             target_dataset = np.array([[t] for t in target_dataset])
 
         assert(len(input_dataset) == len(target_dataset))
@@ -433,8 +435,8 @@ class Trainer(object):
                 shape (#_training_data_points, ).
         """
 
-        print("train", len(input_dataset), len(target_dataset))
-        print("train", input_dataset.ndim, target_dataset.ndim)
+        # print("train", len(input_dataset), len(target_dataset))
+        # print("train", input_dataset.ndim, target_dataset.ndim)
 
         if self._loss_layer == None:
             raise ValueError("Loss layer cannot be None")
@@ -442,8 +444,8 @@ class Trainer(object):
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
             print("train done")
             target_dataset = np.array([[t] for t in target_dataset])
-            print("train", len(input_dataset), len(target_dataset))
-            print("train", input_dataset.ndim, target_dataset.ndim)
+            # print("train", len(input_dataset), len(target_dataset))
+            # print("train", input_dataset.ndim, target_dataset.ndim)
 
         assert(len(input_dataset) == len(target_dataset))
 
@@ -482,14 +484,14 @@ class Trainer(object):
                 shape (#_evaluation_data_points, ).
         """
         # if given 1-d array, convert into 2-d 
-        print("eval", len(input_dataset), len(target_dataset))
-        print("eval", input_dataset.ndim, target_dataset.ndim)
+        # print("eval", len(input_dataset), len(target_dataset))
+        # print("eval", input_dataset.ndim, target_dataset.ndim)
 
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
             print("eval done")
             target_dataset = np.array([[t] for t in target_dataset])
-            print("eval", len(input_dataset), len(target_dataset))
-            print("eval", input_dataset.ndim, target_dataset.ndim)
+            # print("eval", len(input_dataset), len(target_dataset))
+            # print("eval", input_dataset.ndim, target_dataset.ndim)
 
         assert(len(input_dataset) == len(target_dataset))
 
@@ -602,6 +604,7 @@ def example_main():
     y_train = y[:split_idx]
     x_val = x[split_idx:]
     y_val = y[split_idx:]
+
     # if y_val.ndim == 1:
     #     y_val = np.array([[t] for t in y_val])
     prep_input = Preprocessor(x_train)
