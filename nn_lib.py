@@ -42,7 +42,7 @@ class MSELossLayer(Layer):
 
     @staticmethod
     def _mse(y_pred, y_target):
-        print("MSE", np.mean((y_pred - y_target) ** 2))
+        # print("MSE", np.mean((y_pred - y_target) ** 2))
         return abs(np.mean((y_pred - y_target) ** 2))
 
     @staticmethod
@@ -85,7 +85,7 @@ class CrossEntropyLossLayer(Layer):
         self._cache_current = y_target, probs
         # print("bceloss5")
         out = -1 / n_obs * np.sum(y_target * np.log(probs))
-        print(out)
+        # print(out)
         return abs(out)
 
     def backward(self):
@@ -507,7 +507,7 @@ class Trainer(object):
         predictions = self.network.forward(input_dataset)
         # print(target_dataset)
         assert(len(predictions) == len(target_dataset))
-        print("dim", self._loss_layer.forward(predictions, target_dataset))
+        # print("dim", self._loss_layer.forward(predictions, target_dataset))
 
         return self._loss_layer.forward(predictions, target_dataset)
 
@@ -597,11 +597,11 @@ def example_main():
     activations = ["relu", "identity"]
     net = MultiLayerNetwork(input_dim, neurons, activations)
 
-    dat = np.loadtxt("test.dat")
+    dat = np.loadtxt("iris.dat")
     np.random.shuffle(dat)
 
     x = dat[:, :input_dim]
-    y = dat[:, -1]
+    y = dat[:, input_dim:]
 
     # print(x)
     # print(y)
