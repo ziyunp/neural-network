@@ -53,7 +53,7 @@ class MSELossLayer(Layer):
         # print("mseloss1")
         self._cache_current = y_pred, y_target
         # print("mseloss2")
-        return self._mse(y_pred, y_target)
+        return -self._mse(y_pred, y_target)
 
     def backward(self):
         return self._mse_grad(*self._cache_current)
@@ -86,7 +86,7 @@ class CrossEntropyLossLayer(Layer):
         # print("bceloss5")
         out = -1 / n_obs * np.sum(y_target * np.log(probs))
         # return out
-        return abs(out)
+        return -abs(out)
 
     def backward(self):
         y_target, probs = self._cache_current
