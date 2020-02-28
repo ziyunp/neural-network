@@ -83,8 +83,8 @@ class CrossEntropyLossLayer(Layer):
         # print("bceloss4")
         self._cache_current = y_target, probs
         # print("bceloss5")
-        # print("CE")
-        # print(y_target, probs)
+        print("CE")
+        print(y_target.shape, probs.shape)
         out = -1 / n_obs * np.sum(y_target * np.log(probs))
         # print("bceloss5")
         return out
@@ -403,7 +403,9 @@ class Trainer(object):
         # this breaks it
         # if target_dataset.ndim == 1:
         #     target_dataset = np.array([[t] for t in target_dataset])
-        assert(input_dataset.ndim == target_dataset.ndim)
+
+        if target_dataset.ndim == 1:
+            raise ValueError()
         assert(len(input_dataset) == len(target_dataset))
         # print(target_dataset.ndim)
         # print(input_dataset.ndim)
@@ -438,7 +440,8 @@ class Trainer(object):
             raise ValueError("Loss layer cannot be None")
         # if given 1-d array, convert into 2-d 
         if target_dataset.ndim == 1:
-            target_dataset = np.array([[t] for t in target_dataset])
+            raise ValueError()
+            # target_dataset = np.array([[t] for t in target_dataset])
         assert(len(input_dataset) == len(target_dataset))
 
         # print("train", len(input_dataset), len(target_dataset))
@@ -479,6 +482,7 @@ class Trainer(object):
         """
         # if given 1-d array, convert into 2-d 
         if target_dataset.ndim == 1:
+            print("here")
             target_dataset = np.array([[t] for t in target_dataset])
         assert(len(input_dataset) == len(target_dataset))
 
@@ -573,8 +577,8 @@ def checkDatasetsDimensions(input_dataset, target_dataset):
             raise ValueError("Dimensions of target dataset is not consistent")
 
 def example_main():
-    input_dim = 4
-    neurons = [16, 3]
+    input_dim = 6
+    neurons = [16, 7 - input_dim]
     activations = ["relu", "identity"]
     net = MultiLayerNetwork(input_dim, neurons, activations)
 
@@ -582,10 +586,10 @@ def example_main():
     np.random.shuffle(dat)
 
     x = dat[:, :input_dim]
-    y = dat[:, input_dim:]
+    y = dat[:, -1]
 
-    # print(x)
-    # print(y)
+    print(x)
+    print(y)
 
     split_idx = int(0.8 * len(x))
 
@@ -593,8 +597,8 @@ def example_main():
     y_train = y[:split_idx]
     x_val = x[split_idx:]
     y_val = y[split_idx:]
-    if y_val.ndim == 1:
-        y_val = np.array([[t] for t in y_val])
+    # if y_val.ndim == 1:
+    #     y_val = np.array([[t] for t in y_val])
     prep_input = Preprocessor(x_train)
 
     x_train_pre = prep_input.apply(x_train)
