@@ -492,11 +492,12 @@ class Trainer(object):
         # print("eval", len(input_dataset), len(target_dataset))
         # print("eval", input_dataset.ndim, target_dataset.ndim)
 
-        if input_dataset.ndim == 2 and target_dataset.ndim == 1:
-            # print("eval done")
-            target_dataset = np.array([[t] for t in target_dataset])
-            # print("eval", len(input_dataset), len(target_dataset))
-            # print("eval", input_dataset.ndim, target_dataset.ndim)
+        assert(input_dataset.ndim == target_dataset.ndim)
+        # if input_dataset.ndim == 2 and target_dataset.ndim == 1:
+        #     # print("eval done")
+        #     target_dataset = np.array([[t] for t in target_dataset])
+        #     # print("eval", len(input_dataset), len(target_dataset))
+        #     # print("eval", input_dataset.ndim, target_dataset.ndim)
 
         assert(len(input_dataset) == len(target_dataset))
 
@@ -506,7 +507,7 @@ class Trainer(object):
         predictions = self.network.forward(input_dataset)
         # print(target_dataset)
         assert(len(predictions) == len(target_dataset))
-        # print("dim", self._loss_layer.forward(predictions, target_dataset))
+        print("dim", self._loss_layer.forward(predictions, target_dataset))
 
         return self._loss_layer.forward(predictions, target_dataset)
 
@@ -591,7 +592,7 @@ def checkDatasetsDimensions(input_dataset, target_dataset):
             raise ValueError("Dimensions of target dataset is not consistent")
 
 def example_main():
-    input_dim = 4
+    input_dim = 6
     neurons = [16, 7 - input_dim]
     activations = ["relu", "identity"]
     net = MultiLayerNetwork(input_dim, neurons, activations)
@@ -600,7 +601,7 @@ def example_main():
     np.random.shuffle(dat)
 
     x = dat[:, :input_dim]
-    y = dat[:, input_dim:]
+    y = dat[:, -1]
 
     # print(x)
     # print(y)
@@ -640,7 +641,7 @@ def example_main():
         batch_size=2,
         nb_epoch=1,
         learning_rate=0.01,
-        loss_fun="mse",
+        loss_fun="cross_entropy",
         shuffle_flag=False,
     )
 
