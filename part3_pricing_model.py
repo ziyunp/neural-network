@@ -72,7 +72,7 @@ class PricingModel():
         ORD = []
         CAT = []
         VH = []
-
+        LOC_CODE = []
         # Merge vehicle make & model
         make = X_raw[:,Data.vh_make.value]
         model = X_raw[:,Data.vh_model.value]
@@ -80,6 +80,21 @@ class PricingModel():
             VH.append(make[i] + model[i])
         CAT.append(np.array(VH))
         
+        # Merge location codes 
+        # TODO: remove, produces 16028 combinations
+        loc_code = np.array(X_raw[:,COMMUNE_CANTON_DIST_REG[0].value]).reshape(-1,1)
+        for i in range(1, (len(COMMUNE_CANTON_DIST_REG))):
+            index = COMMUNE_CANTON_DIST_REG[i].value
+            new_col = np.array(X_raw[:,index]).reshape(-1,1)
+            loc_code = np.hstack((loc_code, new_col))
+        
+        for row in range(len(loc_code)):
+            code = ''
+            for data in loc_code[row]:
+                code += str(data)
+            LOC_CODE.append(code)
+        CAT.append(np.array(LOC_CODE))
+
         # Split attributes according to data type
         for i in range(len(NUMERICAL)):
             index = NUMERICAL[i].value
@@ -134,6 +149,7 @@ class PricingModel():
             if labels.shape[1] == 1:
                 CAT[:,i] = labels.flatten()
             else: 
+                print(CAT[0,i], labels.shape)
                 #  add arrays of labels into position?
                 for row in range(labels.shape[0]):
                     CAT[row][i] = labels[row].flatten()

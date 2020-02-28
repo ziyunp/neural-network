@@ -49,4 +49,4 @@ EXCLUDED = [Data.id_policy, Data.pol_pay_freq, Data.pol_insee_code, Data.commune
 
 # MERGED
 VH_MAKE_MODEL = [Data.vh_make, Data.vh_model]
-# COMMUNE_CANTON_DIST_REG = [Data.commune_code, Data.canton_code, Data.city_district_code, Data.regional_department_code]
+COMMUNE_CANTON_DIST_REG = [Data.commune_code, Data.canton_code, Data.city_district_code, Data.regional_department_code]
