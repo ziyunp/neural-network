@@ -85,8 +85,8 @@ class CrossEntropyLossLayer(Layer):
         self._cache_current = y_target, probs
         # print("bceloss5")
         out = -1 / n_obs * np.sum(y_target * np.log(probs))
-        return out
-        # return abs(out)
+        # return out
+        return abs(out)
 
     def backward(self):
         y_target, probs = self._cache_current
@@ -509,7 +509,7 @@ class Trainer(object):
         assert(len(predictions) == len(target_dataset))
         # print("dim", self._loss_layer.forward(predictions, target_dataset))
 
-        return -self._loss_layer.forward(predictions, target_dataset)
+        return self._loss_layer.forward(predictions, target_dataset)
 
 class Preprocessor(object):
     """
