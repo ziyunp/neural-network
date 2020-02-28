@@ -395,11 +395,12 @@ class Trainer(object):
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
 
-        # print("shuffle", len(input_dataset), len(target_dataset))
-        # print("shuffle", input_dataset.ndim, target_dataset.ndim)
+        print("shuffle", len(input_dataset), len(target_dataset))
+        print("shuffle", input_dataset.ndim, target_dataset.ndim)
 
         # this breaks it
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
+            print("done")
             target_dataset = np.array([[t] for t in target_dataset])
 
         assert(len(input_dataset) == len(target_dataset))
@@ -432,15 +433,20 @@ class Trainer(object):
                 shape (#_training_data_points, ).
         """
 
+        print("train", len(input_dataset), len(target_dataset))
+        print("train", input_dataset.ndim, target_dataset.ndim)
+
         if self._loss_layer == None:
             raise ValueError("Loss layer cannot be None")
         # if given 1-d array, convert into 2-d 
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
+            print("train done")
             target_dataset = np.array([[t] for t in target_dataset])
+            print("train", len(input_dataset), len(target_dataset))
+            print("train", input_dataset.ndim, target_dataset.ndim)
+
         assert(len(input_dataset) == len(target_dataset))
 
-        # print("train", len(input_dataset), len(target_dataset))
-        # print("train", input_dataset.ndim, target_dataset.ndim)
 
 
         checkDatasetsDimensions(input_dataset, target_dataset)
@@ -476,12 +482,17 @@ class Trainer(object):
                 shape (#_evaluation_data_points, ).
         """
         # if given 1-d array, convert into 2-d 
+        print("eval", len(input_dataset), len(target_dataset))
+        print("eval", input_dataset.ndim, target_dataset.ndim)
+
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
+            print("eval done")
             target_dataset = np.array([[t] for t in target_dataset])
+            print("eval", len(input_dataset), len(target_dataset))
+            print("eval", input_dataset.ndim, target_dataset.ndim)
+
         assert(len(input_dataset) == len(target_dataset))
 
-        # print("eval", len(input_dataset), len(target_dataset))
-        # print("eval", input_dataset.ndim, target_dataset.ndim)
 
         checkDatasetsDimensions(input_dataset, target_dataset)
         
