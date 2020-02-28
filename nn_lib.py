@@ -488,7 +488,7 @@ class Trainer(object):
         predictions = self.network.forward(input_dataset)
         # print(target_dataset)
         assert(len(predictions) == len(target_dataset))
-        return self._loss_layer(predictions, target_dataset)
+        return self._loss_layer.forward(predictions, target_dataset)
 
 class Preprocessor(object):
     """
