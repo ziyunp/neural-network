@@ -258,12 +258,10 @@ class MultiLayerNetwork(object):
             {np.ndarray} -- Output array of shape (batch_size,
                 #_neurons_in_final_layer)
         """
-        
-        assert(len(x[0]) == self.n_in)
 
-        # if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
-        #     raise ValueError("Parameter x should be an array of shape (batch_size\
-        #         , input_dim) with both dimensions larger than 0")
+        if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
+            raise ValueError("Parameter x should be an array of shape (batch_size\
+                , input_dim) with both dimensions larger than 0")
 
         layer_input = x
         layer_output = None
@@ -407,7 +405,7 @@ class Trainer(object):
                 shape (#_training_data_points, ).
         """
         
-        # print("train1")
+        print("train1")
         if self._loss_layer == None:
             raise ValueError("Loss layer cannot be None")
         # if given 1-d array, convert into 2-d 
@@ -435,7 +433,7 @@ class Trainer(object):
                 self.network.backward(loss_grad)
                 self.network.update_params(self.learning_rate)
 
-        # print("train2")
+        print("train2")
         
 
 
@@ -449,14 +447,14 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_evaluation_data_points, ).
         """
-        # print("eval 1")
+        print("eval 1")
         # if given 1-d array, convert into 2-d 
         if target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
 
         checkDatasetsDimensions(input_dataset, target_dataset)
         predictions = self.network.forward(input_dataset)
-        # print("eval 2")
+        print("eval 2")
         return self._loss_layer.forward(predictions, target_dataset)
 
     
