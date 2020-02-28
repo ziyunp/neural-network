@@ -459,7 +459,7 @@ class Trainer(object):
                 input_batch = input_dataset[i * self.batch_size : (i + 1) * self.batch_size]
                 target_batch = target_dataset[i * self.batch_size : (i + 1) * self.batch_size]
                 outputs = self.network.forward(input_batch)
-                self._loss_layer(outputs, target_batch)
+                self._loss_layer.forward(outputs, target_batch)
                 loss_grad = self._loss_layer.backward()
                 self.network.backward(loss_grad)
                 self.network.update_params(self.learning_rate)        
