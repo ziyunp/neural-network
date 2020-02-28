@@ -392,6 +392,10 @@ class Trainer(object):
 
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
+
+        print("shuffle", len(input_dataset), len(target_dataset))
+        print("shuffle", input_dataset.ndim, target_dataset.ndim)
+
         # this breaks it
         # if target_dataset.ndim == 1:
         #     target_dataset = np.array([[t] for t in target_dataset])
@@ -424,12 +428,17 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_training_data_points, ).
         """
+
         if self._loss_layer == None:
             raise ValueError("Loss layer cannot be None")
         # if given 1-d array, convert into 2-d 
         if target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
         assert(len(input_dataset) == len(target_dataset))
+
+        print("train", len(input_dataset), len(target_dataset))
+        print("train", input_dataset.ndim, target_dataset.ndim)
+
 
         checkDatasetsDimensions(input_dataset, target_dataset)
 
@@ -467,6 +476,9 @@ class Trainer(object):
         if target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
         assert(len(input_dataset) == len(target_dataset))
+
+        print("eval", len(input_dataset), len(target_dataset))
+        print("eval", input_dataset.ndim, target_dataset.ndim)
 
         checkDatasetsDimensions(input_dataset, target_dataset)
         
@@ -576,7 +588,8 @@ def example_main():
     y_train = y[:split_idx]
     x_val = x[split_idx:]
     y_val = y[split_idx:]
-
+    if y_val.ndim == 1:
+        y_val = np.array([[t] for t in y_val])
     prep_input = Preprocessor(x_train)
 
     x_train_pre = prep_input.apply(x_train)
