@@ -67,12 +67,24 @@ class PricingModel():
         """
         # =============================================================
         # YOUR CODE HERE
+        # Group data into 3 types and process separately
         NUM = []
         ORD = []
         CAT = []
-        VH = []
 
+        # Filter attributes that have # of nan or zeros > 5% of data points
+        threshold = 0.05
+        rm_attr = []
+        for feat in range(X_raw.shape[1]):
+            count = 0
+            for data in X_raw[:,feat]:
+                if not data or data != data:
+                    count += 1
+            if count > threshold * X_raw.shape[0]:
+                rm_attr.append(feat)
+        
         # Merge vehicle make & model
+        VH = []
         make = X_raw[:,Data.vh_make.value]
         model = X_raw[:,Data.vh_model.value]
         for i in range(len(make)):
@@ -88,22 +100,25 @@ class PricingModel():
                 CODE.append(str(c))
             CAT.append(np.array(CODE))
 
-        # Split attributes according to data type
+        # Group attributes according to data type
         for i in range(len(NUMERICAL)):
             index = NUMERICAL[i].value
-            NUM.append(X_raw[:,index])
+            if index not in rm_attr:
+                NUM.append(X_raw[:,index])
         for j in range(len(ORDINAL)):
             index = ORDINAL[j].value
-            ORD.append(X_raw[:,index])
+            if index not in rm_attr:
+                ORD.append(X_raw[:,index])
         for k in range(len(CATEGORICAL)):
             index = CATEGORICAL[k].value
-            CAT.append(X_raw[:,index])
+            if index not in rm_attr:
+                CAT.append(X_raw[:,index])
 
         NUM = np.array(NUM).transpose()
         ORD = np.array(ORD).transpose()
         CAT = np.array(CAT).transpose()
 
-        # Filter data that has #_of_nan >= threshold
+        # Filter NUM data that has #_of_nan >= threshold
         threshold = 3
         rm_rows = []
         for row in range(len(NUM)):
