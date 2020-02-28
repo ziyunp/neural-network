@@ -354,6 +354,7 @@ class Trainer(object):
             shuffle_flag {bool} -- If True, training data is shuffled before
                 training.
         """
+        print("trainer constructor")
         self.network = network
         self.batch_size = batch_size
         self.nb_epoch = nb_epoch
@@ -409,7 +410,7 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_training_data_points, ).
         """
-        
+        print("train called")
         if self._loss_layer == None:
             raise ValueError("Loss layer cannot be None")
         # if given 1-d array, convert into 2-d 
@@ -419,10 +420,11 @@ class Trainer(object):
         checkDatasetsDimensions(input_dataset, target_dataset)
 
         for epoch in range(self.nb_epoch):
-            
+            # if shuffle_flag is True, shuffle on every epoch
             if self.shuffle_flag:
                 input_dataset, target_dataset = self.shuffle(input_dataset, target_dataset)
-
+            
+            # calc num of batches for the given batch_size
             n_datapoints = input_dataset.shape[0]
             n_batches = math.ceil(n_datapoints/self.batch_size)
             
