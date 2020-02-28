@@ -232,7 +232,7 @@ def load_model():
     return trained_model
 
 # ENSURE TO ADD IN WHATEVER INPUTS YOU DEEM NECESSARRY TO THIS FUNCTION
-def ClaimClassifierHyperParameterSearch():
+def ClaimClassifierHyperParameterSearch(x_train, y_train, x_val, y_val):
     """Performs a hyper-parameter for fine-tuning the classifier.
 
     Implement a function that performs a hyper-parameter search for your
@@ -240,10 +240,52 @@ def ClaimClassifierHyperParameterSearch():
 
     The function should return your optimised hyper-parameters. 
     """
-    # Hyperparameter lists
-    # 
+    grid = {"learning_rate" : 1e-3,
+            "neuron_num" : 6,
+            "batch_size" : 16,
+            "over" : 0.7,
+            "roc_auc" : 0}
+    for learning_rate in np.arange(0.00002, 0.0005, 0.00002): # 1-e3 is the default lr for adam
+        for neuron_num in range(6, 18, 2):
+            for batch_size in range(16, 64, 8):
+                for over in np.arange(0.7, 1, 0.1):
+                    print("learning_rate: {}, neuron_num: {}, batch_size: {}, over : {}"\
+                          .format(learning_rate, neuron_num, batch_size, over))
 
-    return  # Return the chosen hyper parameters
+                    # sampling
+                    oversampling = SMOTE(over)
+                    x, y = oversampling.fit_resample(x_train, y_train)
+                    x = np.array(x)
+                    y = np.array(y).reshape(len(y), 1)
+
+                    # Create network
+                    claim_classifier = ClaimClassifier(input_dim = 9, 
+                                                    output_dim = 1, 
+                                                    neurons = [neuron_num, neuron_num, neuron_num, neuron_num], 
+                                                    activations = ["relu", "sigmoid"], 
+                                                    loss_func = "bce", 
+                                                    optimiser = "adam", 
+                                                    learning_rate = learning_rate, 
+                                                    max_epoch = 100, 
+                                                    batch_size = batch_size)
+
+                    # Train the network
+                    claim_classifier.fit(x, y, x_val, y_val, 0.00008)
+
+                    #Predict
+                    prob_train = claim_classifier.predict(x_val)
+
+                    # Evaluation
+                    roc_auc = roc_auc_score(y_val, prob_train)
+                    if roc_auc > grid["roc_auc"]:
+                        grid["roc_auc"] = roc_auc
+                        grid["learning_rate"] = learning_rate
+                        grid["neuron_num"] = neuron_num
+                        grid["batch_size"] = batch_size
+                        grid["over"] = over
+                        print(grid)
+
+    return grid
 
 def over_sampling(dataset, ratio):
     """Performs oversampling to the given dataset according to ratio 
@@ -379,6 +421,27 @@ def main():
     # claim_classifier.evaluate_architecture(prediction_test.squeeze(), y_test)
 
     plot_precision_recall(prob_val, y_val)
+
+def hyper_main():
+    # Read the dataset
+    dataset = np.genfromtxt('part2_training_data.csv', delimiter=',', skip_header=1)
+    np.random.shuffle(dataset)
+
+    x = dataset[:, :9]
+    y = dataset[:, 10:] # not including claim_amount 
+
+    split_idx_train = int(0.7 * len(dataset))
+    split_idx_val = int((0.7 + 0.15) * len(dataset))
+
+    x_val = x[split_idx_train:split_idx_val]
+    y_val = y[split_idx_train:split_idx_val]
+    x_test = x[split_idx_val:]
+    y_test = y[split_idx_val:]
+
+    x_train = x[:split_idx_train]
+    y_train = y[:split_idx_train]
+
+    ClaimClassifierHyperParameterSearch(x_train, y_train, x_val, y_val)
 
 if __name__ == "__main__":
     main()
