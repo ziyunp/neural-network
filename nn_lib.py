@@ -403,8 +403,10 @@ class Trainer(object):
             print("done")
             print("shuffle", len(input_dataset), len(target_dataset))
             print("shuffle", input_dataset.ndim, target_dataset.ndim)
+            print(target_dataset)
             target_dataset = np.array([[t] for t in target_dataset])
 
+        print("ok")
         assert(len(input_dataset) == len(target_dataset))
         # print(target_dataset.ndim)
         # print(input_dataset.ndim)
@@ -412,6 +414,8 @@ class Trainer(object):
         np.random.shuffle(order)
         input_dataset = input_dataset[order]
         target_dataset = target_dataset[order]
+        print("ok before return")
+
         return (input_dataset, target_dataset)
 
     def train(self, input_dataset, target_dataset):
