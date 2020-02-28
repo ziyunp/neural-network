@@ -49,7 +49,7 @@ class MSELossLayer(Layer):
         return 2 * (y_pred - y_target) / len(y_pred)
 
     def forward(self, y_pred, y_target):
-        # print("mseloss1")
+        print("mseloss1")
         self._cache_current = y_pred, y_target
         # print("mseloss2")
         return self._mse(y_pred, y_target)
@@ -74,7 +74,7 @@ class CrossEntropyLossLayer(Layer):
         return numer / denom
 
     def forward(self, inputs, y_target):
-        # print("bceloss1")
+        print("bceloss1")
         assert len(inputs) == len(y_target)
         # print("bceloss2")
         n_obs = len(y_target)
