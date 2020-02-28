@@ -7,7 +7,7 @@ from sklearn import preprocessing
 from sklearn.impute import SimpleImputer
 import torch.nn as nn
 from data_processing import *
-import math
+from part3_helper import *
 
 def fit_and_calibrate_classifier(classifier, X, y):
     # DO NOT ALTER THIS FUNCTION
@@ -67,21 +67,20 @@ class PricingModel():
         """
         # =============================================================
         # YOUR CODE HERE
+        # TODO:
+        # function for report analysis
+        # deal with outliers in NUM
+        # note that this will be called in prediction - add param to flag train/predict
+
         # Group data into 3 types and process separately
         NUM = []
         ORD = []
         CAT = []
-
+        
+        # TODO: Store removed attributes and apply on prediction set
         # Filter attributes that have # of nan or zeros > 10% of data points
-        threshold = 0.1
-        rm_attr = []
-        for feat in range(X_raw.shape[1]):
-            count = 0
-            for data in X_raw[:,feat]:
-                if not data or data != data:
-                    count += 1
-            if count > threshold * X_raw.shape[0]:
-                rm_attr.append(feat)
+        THRESHOLD = 0.1
+        rm_attr = filter_attributes(X_raw, THRESHOLD)
         for att in rm_attr:
             if att in [e.value for e in ORDINAL]:
                 ORDINAL.remove(Data(att))
@@ -91,45 +90,8 @@ class PricingModel():
                 CATEGORICAL.remove(Data(att))
 
         # Remove rows that have # of nan or zeros > 10% of #_of_features
-        rm_rows = []
-        for row in range(len(X_raw)):
-            count = 0
-            for i in range(X_raw.shape[1]):
-                if i not in rm_attr:
-                    data = X_raw[row][i]
-                    if not data or data != data:
-                        count += 1
-            if count > threshold * X_raw.shape[1]:
-                rm_rows.append(row)
+        rm_rows = filter_data(X_raw, THRESHOLD, rm_attr)
         X_raw = np.delete(X_raw, rm_rows, 0)
-
-        # Merge vehicle make & model
-        VH = []
-        if Data.vh_make in CATEGORICAL and Data.vh_model in CATEGORICAL:
-            make = X_raw[:,Data.vh_make.value]
-            model = X_raw[:,Data.vh_model.value]
-            for i in range(len(make)):
-                VH.append(make[i] + model[i])
-            CAT.append(np.array(VH))
-            CATEGORICAL.remove(Data.vh_make)
-            CATEGORICAL.remove(Data.vh_model)
-
-        # Convert location codes from float -> string
-        if Data.commune_code in CATEGORICAL:
-            CATEGORICAL.remove(Data.commune_code)
-            commune = X_raw[:,Data.commune_code.value]
-            commune_code = [str(c) for c in commune]
-            CAT.append(np.array(commune_code))
-        if Data.canton_code in CATEGORICAL:
-            CATEGORICAL.remove(Data.canton_code)
-            canton = X_raw[:,Data.canton_code.value]
-            canton_code = [str(c) for c in canton]
-            CAT.append(np.array(canton_code))
-        if Data.city_district_code in CATEGORICAL:
-            CATEGORICAL.remove(Data.city_district_code)
-            city_district = X_raw[:,Data.city_district_code.value]
-            city_district_code = [str(c) for c in city_district]
-            CAT.append(np.array(city_district_code))
 
         # Group attributes according to data type
         for i in range(len(NUMERICAL)):
@@ -147,6 +109,7 @@ class PricingModel():
         CAT = np.array(CAT).transpose()
 
         # Fill in missing values
+        # TODO: use IterativeImputer?
         imp_NA = SimpleImputer(missing_values=np.nan, strategy="constant", fill_value="NA") 
         imp_replace_nan = SimpleImputer(missing_values=np.nan, strategy="mean")     
         imp_replace_zero = SimpleImputer(missing_values=0, strategy="mean")   
@@ -172,12 +135,10 @@ class PricingModel():
         for i in range (CAT.shape[1]):  
             sparse_matrix = lb.fit_transform(CAT[:,i])
             X_clean = np.hstack((X_clean, sparse_matrix))    
-        
-        # Normalise with MinMaxScaler
-        scaler = preprocessing.MinMaxScaler()
-        scaler.fit(X_clean)
 
-        return np.asarray(scaler.transform(X_clean)) # YOUR CLEAN DATA AS A NUMPY ARRAY
+        # Use normalisation in base_classifier
+        
+        return X_clean # YOUR CLEAN DATA AS A NUMPY ARRAY
 
     def fit(self, X_raw, y_raw, claims_raw):
         """Classifier training function.
