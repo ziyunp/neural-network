@@ -447,14 +447,11 @@ class Trainer(object):
             raise ValueError("Loss layer cannot be None")
         # if given 1-d array, convert into 2-d 
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
-            # print("train done")
             target_dataset = np.array([[t] for t in target_dataset])
             # print("train", len(input_dataset), len(target_dataset))
             # print("train", input_dataset.ndim, target_dataset.ndim)
 
         assert(len(input_dataset) == len(target_dataset))
-
-
 
         checkDatasetsDimensions(input_dataset, target_dataset)
 
@@ -496,22 +493,22 @@ class Trainer(object):
         # print("eval", input_dataset.ndim, target_dataset.ndim)
 
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
-            print("eval done")
-            target_dataset_transform = np.array([[t] for t in target_dataset])
+            # print("eval done")
+            target_dataset = np.array([[t] for t in target_dataset])
             # print("eval", len(input_dataset), len(target_dataset))
             # print("eval", input_dataset.ndim, target_dataset.ndim)
 
-        assert(len(input_dataset) == len(target_dataset_transform))
+        assert(len(input_dataset) == len(target_dataset))
 
 
-        checkDatasetsDimensions(input_dataset, target_dataset_transform)
+        checkDatasetsDimensions(input_dataset, target_dataset)
         
         predictions = self.network.forward(input_dataset)
         # print(target_dataset)
-        assert(len(predictions) == len(target_dataset_transform))
-        # print("dim", self._loss_layer.forward(predictions, target_dataset_transform))
+        assert(len(predictions) == len(target_dataset))
+        # print("dim", self._loss_layer.forward(predictions, target_dataset))
 
-        return self._loss_layer.forward(predictions, target_dataset_transform)
+        return -self._loss_layer.forward(predictions, target_dataset)
 
 class Preprocessor(object):
     """
@@ -605,8 +602,8 @@ def example_main():
     x = dat[:, :input_dim]
     y = dat[:, -1]
 
-    print(x)
-    print(y)
+    # print(x)
+    # print(y)
 
     # x_s, y_s = Trainer.shuffle(x, y)
 
@@ -647,11 +644,7 @@ def example_main():
         shuffle_flag=False,
     )
 
-
     trainer.train(x_train_pre, y_train)
-
-    # print(x_train_pre)
-    # print(y_train)
 
     print("Train loss = ", trainer.eval_loss(x_train_pre, y_train))
     print("Validation loss = ", trainer.eval_loss(x_val_pre, y_val))
