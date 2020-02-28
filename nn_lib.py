@@ -49,7 +49,9 @@ class MSELossLayer(Layer):
         return 2 * (y_pred - y_target) / len(y_pred)
 
     def forward(self, y_pred, y_target):
+        print("mseloss1")
         self._cache_current = y_pred, y_target
+        print("mseloss2")
         return self._mse(y_pred, y_target)
 
     def backward(self):
@@ -72,12 +74,17 @@ class CrossEntropyLossLayer(Layer):
         return numer / denom
 
     def forward(self, inputs, y_target):
+        print("bceloss1")
         assert len(inputs) == len(y_target)
+        print("bceloss2")
         n_obs = len(y_target)
+        print("bceloss3")
         probs = self.softmax(inputs)
+        print("bceloss4")
         self._cache_current = y_target, probs
-
+        print("bceloss5")
         out = -1 / n_obs * np.sum(y_target * np.log(probs))
+        print("bceloss5")
         return out
 
     def backward(self):
@@ -266,12 +273,13 @@ class MultiLayerNetwork(object):
         # if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
         #     raise ValueError("Parameter x should be an array of shape (batch_size\
         #         , input_dim) with both dimensions larger than 0")
-
+        print("forward1")
         layer_input = x
         layer_output = None
         for this_layer in self._layers:
             layer_output = this_layer.forward(layer_input)
             layer_input = layer_output
+        print("forward2")
         return layer_output
 
     def __call__(self, x):
