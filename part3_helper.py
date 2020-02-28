@@ -14,10 +14,10 @@ def filter_data(X_raw, threshold, removed_att):
   for row in range(len(X_raw)):
     count = 0
     for i in range(X_raw.shape[1]):
-        if i not in removed_att:
-            data = X_raw[row][i]
-            if not data or data != data:
-                count += 1
+      if i not in removed_att:
+        data = X_raw[row][i]
+        if not data or data != data:
+          count += 1
     if count > threshold * X_raw.shape[1]:
-        rm_rows.append(row)
+      rm_rows.append(row)
   return rm_rows
