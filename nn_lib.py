@@ -450,6 +450,8 @@ class Trainer(object):
         
         predictions = self.network.forward(input_dataset)
         assert(len(predictions) == len(target_dataset))
+        if(self._loss_layer.forward(predictions, target_dataset)>1)
+            return 0.999
         return -self._loss_layer.forward(predictions, target_dataset)
 
 class Preprocessor(object):
