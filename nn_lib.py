@@ -83,6 +83,8 @@ class CrossEntropyLossLayer(Layer):
         # print("bceloss4")
         self._cache_current = y_target, probs
         # print("bceloss5")
+        # print("CE")
+        # print(y_target, probs)
         out = -1 / n_obs * np.sum(y_target * np.log(probs))
         # print("bceloss5")
         return out
@@ -268,7 +270,9 @@ class MultiLayerNetwork(object):
                 #_neurons_in_final_layer)
         """
         
+        # print(len(x[0]), self.input_dim)
         assert(len(x[0]) == self.input_dim)
+
 
         # if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
         #     raise ValueError("Parameter x should be an array of shape (batch_size\
@@ -393,12 +397,13 @@ class Trainer(object):
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
 
-        print("shuffle", len(input_dataset), len(target_dataset))
-        print("shuffle", input_dataset.ndim, target_dataset.ndim)
+        # print("shuffle", len(input_dataset), len(target_dataset))
+        # print("shuffle", input_dataset.ndim, target_dataset.ndim)
 
         # this breaks it
         # if target_dataset.ndim == 1:
         #     target_dataset = np.array([[t] for t in target_dataset])
+        assert(input_dataset.ndim == target_dataset.ndim)
         assert(len(input_dataset) == len(target_dataset))
         # print(target_dataset.ndim)
         # print(input_dataset.ndim)
@@ -436,8 +441,8 @@ class Trainer(object):
             target_dataset = np.array([[t] for t in target_dataset])
         assert(len(input_dataset) == len(target_dataset))
 
-        print("train", len(input_dataset), len(target_dataset))
-        print("train", input_dataset.ndim, target_dataset.ndim)
+        # print("train", len(input_dataset), len(target_dataset))
+        # print("train", input_dataset.ndim, target_dataset.ndim)
 
 
         checkDatasetsDimensions(input_dataset, target_dataset)
@@ -477,8 +482,8 @@ class Trainer(object):
             target_dataset = np.array([[t] for t in target_dataset])
         assert(len(input_dataset) == len(target_dataset))
 
-        print("eval", len(input_dataset), len(target_dataset))
-        print("eval", input_dataset.ndim, target_dataset.ndim)
+        # print("eval", len(input_dataset), len(target_dataset))
+        # print("eval", input_dataset.ndim, target_dataset.ndim)
 
         checkDatasetsDimensions(input_dataset, target_dataset)
         
@@ -576,8 +581,8 @@ def example_main():
     dat = np.loadtxt("test.dat")
     np.random.shuffle(dat)
 
-    x = dat[:, :4]
-    y = dat[:, -1]
+    x = dat[:, :input_dim]
+    y = dat[:, input_dim:]
 
     # print(x)
     # print(y)
@@ -594,6 +599,7 @@ def example_main():
 
     x_train_pre = prep_input.apply(x_train)
     x_val_pre = prep_input.apply(x_val)
+
 
     # trainer = Trainer(
     #     network=net,
