@@ -94,7 +94,21 @@ class PricingModel():
         NUM = np.array(NUM).transpose()
         ORD = np.array(ORD).transpose()
         CAT = np.array(CAT).transpose()
-    
+
+        # Filter data that has #_of_nan >= threshold
+        threshold = 3
+        rm_rows = []
+        for row in range(len(NUM)):
+            count = 0
+            for data in NUM[row]:
+                if math.isnan(data):
+                    count += 1
+            if count >= threshold:
+                rm_rows.append(row)
+        NUM = np.delete(NUM, rm_rows, 0)
+        ORD = np.delete(ORD, rm_rows, 0)
+        CAT = np.delete(CAT, rm_rows, 0)
+        
         # Fill in missing values
         imp_NA = SimpleImputer(missing_values=np.nan, strategy="constant", fill_value="NA") 
         imp_zero = SimpleImputer(missing_values=0, strategy="constant", fill_value=0) 
