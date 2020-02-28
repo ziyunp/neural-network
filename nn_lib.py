@@ -42,6 +42,7 @@ class MSELossLayer(Layer):
 
     @staticmethod
     def _mse(y_pred, y_target):
+        # print("MSE", np.mean((y_pred - y_target) ** 2))
         return np.mean((y_pred - y_target) ** 2)
 
     @staticmethod
@@ -49,7 +50,7 @@ class MSELossLayer(Layer):
         return 2 * (y_pred - y_target) / len(y_pred)
 
     def forward(self, y_pred, y_target):
-        print("mseloss1")
+        # print("mseloss1")
         self._cache_current = y_pred, y_target
         # print("mseloss2")
         return self._mse(y_pred, y_target)
@@ -74,7 +75,7 @@ class CrossEntropyLossLayer(Layer):
         return numer / denom
 
     def forward(self, inputs, y_target):
-        print("bceloss1")
+        # print("bceloss1")
         assert len(inputs) == len(y_target)
         # print("bceloss2")
         n_obs = len(y_target)
@@ -84,7 +85,7 @@ class CrossEntropyLossLayer(Layer):
         self._cache_current = y_target, probs
         # print("bceloss5")
         out = -1 / n_obs * np.sum(y_target * np.log(probs))
-        # print("bceloss5")
+        # print(out)
         return out
 
     def backward(self):
@@ -369,7 +370,7 @@ class Trainer(object):
         self.nb_epoch = nb_epoch
         self.learning_rate = learning_rate
         self.loss_fun = loss_fun
-        self.shuffle_flag = False
+        self.shuffle_flag = shuffle_flag
         # print("loss_fun: ", self.loss_fun, " shuffle: ", self.shuffle_flag)
 
         self._loss_layer = None
@@ -398,13 +399,13 @@ class Trainer(object):
         # print("shuffle", len(input_dataset), len(target_dataset))
         # print("shuffle", input_dataset.ndim, target_dataset.ndim)
 
-        # this breaks it
-        if input_dataset.ndim == 2 and target_dataset.ndim == 1:
+        # this breaks it - shuffle isnt meant to do this
+        # if input_dataset.ndim == 2 and target_dataset.ndim == 1:
             # print("done")
             # print("shuffle", len(input_dataset), len(target_dataset))
             # print("shuffle", input_dataset.ndim, target_dataset.ndim)
             # print(input_dataset, target_dataset)
-            target_dataset = np.array([[t] for t in target_dataset])
+            # target_dataset = np.array([[t] for t in target_dataset])
 
         assert(len(input_dataset) == len(target_dataset))
         # print(target_dataset.ndim)
@@ -446,7 +447,7 @@ class Trainer(object):
             raise ValueError("Loss layer cannot be None")
         # if given 1-d array, convert into 2-d 
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
-            print("train done")
+            # print("train done")
             target_dataset = np.array([[t] for t in target_dataset])
             # print("train", len(input_dataset), len(target_dataset))
             # print("train", input_dataset.ndim, target_dataset.ndim)
@@ -496,19 +497,21 @@ class Trainer(object):
 
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
             print("eval done")
-            target_dataset = np.array([[t] for t in target_dataset])
+            target_dataset_transform = np.array([[t] for t in target_dataset])
             # print("eval", len(input_dataset), len(target_dataset))
             # print("eval", input_dataset.ndim, target_dataset.ndim)
 
-        assert(len(input_dataset) == len(target_dataset))
+        assert(len(input_dataset) == len(target_dataset_transform))
 
 
-        checkDatasetsDimensions(input_dataset, target_dataset)
+        checkDatasetsDimensions(input_dataset, target_dataset_transform)
         
         predictions = self.network.forward(input_dataset)
         # print(target_dataset)
-        assert(len(predictions) == len(target_dataset))
-        return self._loss_layer.forward(predictions, target_dataset)
+        assert(len(predictions) == len(target_dataset_transform))
+        # print("dim", self._loss_layer.forward(predictions, target_dataset_transform))
+
+        return self._loss_layer.forward(predictions, target_dataset_transform)
 
 class Preprocessor(object):
     """
@@ -602,8 +605,8 @@ def example_main():
     x = dat[:, :input_dim]
     y = dat[:, -1]
 
-    # print(x)
-    # print(y)
+    print(x)
+    print(y)
 
     # x_s, y_s = Trainer.shuffle(x, y)
 
@@ -619,8 +622,7 @@ def example_main():
     x_val = x[split_idx:]
     y_val = y[split_idx:]
 
-    # if y_val.ndim == 1:
-    #     y_val = np.array([[t] for t in y_val])
+
     prep_input = Preprocessor(x_train)
 
     x_train_pre = prep_input.apply(x_train)
@@ -638,7 +640,7 @@ def example_main():
 
     trainer = Trainer(
         network=net,
-        batch_size=1,
+        batch_size=2,
         nb_epoch=1,
         learning_rate=0.01,
         loss_fun="cross_entropy",
@@ -654,6 +656,9 @@ def example_main():
     print("Train loss = ", trainer.eval_loss(x_train_pre, y_train))
     print("Validation loss = ", trainer.eval_loss(x_val_pre, y_val))
 
+    #kill  this
+    if y_val.ndim == 1:
+        y_val = np.array([[t] for t in y_val])
     preds = net(x_val_pre).argmax(axis=1).squeeze()
     targets = y_val.argmax(axis=1).squeeze()
     accuracy = (preds == targets).mean()
