@@ -392,9 +392,12 @@ class Trainer(object):
 
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
-        if target_dataset.ndim == 1:
-            target_dataset = np.array([[t] for t in target_dataset])
+        # this breaks it
+        # if target_dataset.ndim == 1:
+        #     target_dataset = np.array([[t] for t in target_dataset])
         assert(len(input_dataset) == len(target_dataset))
+        print(target_dataset.ndim)
+        print(input_dataset.ndim)
         order = np.arange(len(input_dataset))
         np.random.shuffle(order)
         input_dataset = input_dataset[order]
