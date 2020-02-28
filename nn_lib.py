@@ -83,8 +83,6 @@ class CrossEntropyLossLayer(Layer):
         # print("bceloss4")
         self._cache_current = y_target, probs
         # print("bceloss5")
-        print("CE")
-        print(y_target.shape, probs.shape)
         out = -1 / n_obs * np.sum(y_target * np.log(probs))
         # print("bceloss5")
         return out
@@ -401,11 +399,9 @@ class Trainer(object):
         # print("shuffle", input_dataset.ndim, target_dataset.ndim)
 
         # this breaks it
-        # if target_dataset.ndim == 1:
-        #     target_dataset = np.array([[t] for t in target_dataset])
-
         if target_dataset.ndim == 1:
-            raise ValueError()
+            target_dataset = np.array([[t] for t in target_dataset])
+
         assert(len(input_dataset) == len(target_dataset))
         # print(target_dataset.ndim)
         # print(input_dataset.ndim)
@@ -440,8 +436,7 @@ class Trainer(object):
             raise ValueError("Loss layer cannot be None")
         # if given 1-d array, convert into 2-d 
         if target_dataset.ndim == 1:
-            raise ValueError()
-            # target_dataset = np.array([[t] for t in target_dataset])
+            target_dataset = np.array([[t] for t in target_dataset])
         assert(len(input_dataset) == len(target_dataset))
 
         # print("train", len(input_dataset), len(target_dataset))
@@ -482,7 +477,6 @@ class Trainer(object):
         """
         # if given 1-d array, convert into 2-d 
         if target_dataset.ndim == 1:
-            print("here")
             target_dataset = np.array([[t] for t in target_dataset])
         assert(len(input_dataset) == len(target_dataset))
 
@@ -588,8 +582,8 @@ def example_main():
     x = dat[:, :input_dim]
     y = dat[:, -1]
 
-    print(x)
-    print(y)
+    # print(x)
+    # print(y)
 
     split_idx = int(0.8 * len(x))
 
