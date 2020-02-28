@@ -296,6 +296,8 @@ class MultiLayerNetwork(object):
         for this_layer in reversed(self._layers):
             layer_input = this_layer.backward(layer_output)
             layer_output = layer_input
+        
+        assert(len(layer_input[0]) == self.input_dim) 
         return layer_input
 
     def update_params(self, learning_rate):
