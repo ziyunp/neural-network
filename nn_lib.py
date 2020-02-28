@@ -399,7 +399,7 @@ class Trainer(object):
         # print("shuffle", input_dataset.ndim, target_dataset.ndim)
 
         # this breaks it
-        if target_dataset.ndim == 1:
+        if input_dataset.ndim == 2 and target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
 
         assert(len(input_dataset) == len(target_dataset))
@@ -435,7 +435,7 @@ class Trainer(object):
         if self._loss_layer == None:
             raise ValueError("Loss layer cannot be None")
         # if given 1-d array, convert into 2-d 
-        if target_dataset.ndim == 1:
+        if input_dataset.ndim == 2 and target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
         assert(len(input_dataset) == len(target_dataset))
 
@@ -476,7 +476,7 @@ class Trainer(object):
                 shape (#_evaluation_data_points, ).
         """
         # if given 1-d array, convert into 2-d 
-        if target_dataset.ndim == 1:
+        if input_dataset.ndim == 2 and target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
         assert(len(input_dataset) == len(target_dataset))
 
