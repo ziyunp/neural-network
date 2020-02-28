@@ -395,18 +395,17 @@ class Trainer(object):
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
 
-        print("shuffle", len(input_dataset), len(target_dataset))
-        print("shuffle", input_dataset.ndim, target_dataset.ndim)
+        # print("shuffle", len(input_dataset), len(target_dataset))
+        # print("shuffle", input_dataset.ndim, target_dataset.ndim)
 
         # this breaks it
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
-            print("done")
-            print("shuffle", len(input_dataset), len(target_dataset))
-            print("shuffle", input_dataset.ndim, target_dataset.ndim)
-            print(target_dataset)
+            # print("done")
+            # print("shuffle", len(input_dataset), len(target_dataset))
+            # print("shuffle", input_dataset.ndim, target_dataset.ndim)
+            print(input_dataset, target_dataset)
             target_dataset = np.array([[t] for t in target_dataset])
 
-        print("ok")
         assert(len(input_dataset) == len(target_dataset))
         # print(target_dataset.ndim)
         # print(input_dataset.ndim)
@@ -414,7 +413,8 @@ class Trainer(object):
         np.random.shuffle(order)
         input_dataset = input_dataset[order]
         target_dataset = target_dataset[order]
-        print("ok before return")
+        if input_dataset.ndim == 2 and target_dataset.ndim == 1:
+            print(input_dataset, target_dataset)
 
         return (input_dataset, target_dataset)
 
@@ -599,8 +599,15 @@ def example_main():
     x = dat[:, :input_dim]
     y = dat[:, -1]
 
-    # print(x)
-    # print(y)
+    print(x)
+    print(y)
+
+    x_s, y_s = Trainer.shuffle(x, y)
+
+    print(x_s)
+    print(y_s)
+    
+    print(np.append(x_s, y_s, axis=1))
 
     split_idx = int(0.8 * len(x))
 
