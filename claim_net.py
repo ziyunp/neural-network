@@ -28,8 +28,10 @@ class ClaimNet(nn.Module):
         #     n_inputs = neurons[i]  
 
         self._ll1 = nn.Linear(input_dim, neurons[0])
-        self._tanh1 = nn.Tanh()
-        self._ll2 = nn.Linear(neurons[0], output_dim)
+        self._relu1 = nn.ReLU()
+        self._ll2 = nn.Linear(neurons[0], neurons[1])
+        self._relu2 = nn.ReLU()
+        self._ll3 = nn.Linear(neurons[1], output_dim)
         self._sigmoid1 = nn.Sigmoid()
 
 
@@ -42,8 +44,10 @@ class ClaimNet(nn.Module):
         #     x = layer(x)
 
         x = self._ll1(x)
-        x = self._tanh1(x)
+        x = self._relu1(x)
         x = self._ll2(x)
+        x = self._relu2(x)
+        x = self._ll3(x)
         x = self._sigmoid1(x)
 
         return x
