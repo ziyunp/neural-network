@@ -101,7 +101,6 @@ class PricingModel():
         #     LOC_CODE.append(code)
         # CAT.append(np.array(LOC_CODE))
 
-
         # Split attributes according to data type
         for i in range(len(NUMERICAL)):
             index = NUMERICAL[i].value
@@ -137,22 +136,23 @@ class PricingModel():
         imp_replace_nan = SimpleImputer(missing_values=np.nan, strategy="mean")     
         imp_replace_zero = SimpleImputer(missing_values=0, strategy="mean")   
 
-        # for ORDINAL type, replace nan occurrences with "NA"
+        # for ORDINAL type, replace nan with "NA"
         ORD = imp_NA.fit_transform(ORD)
 
-        # for NUMERICAL type, replace nan and 0 occurrences with mean
+        # for NUMERICAL type, replace nan and 0 with mean
         NUM = imp_replace_nan.fit_transform(NUM)
         NUM = imp_replace_zero.fit_transform(NUM)
 
-        # for CATEGORICAL type, check if values are string/numeric
+        # for CATEGORICAL type, replace nan with "NA"
         CAT = imp_NA.fit_transform(CAT)
 
+        # Transform ORDINAL strings into numerical labels
         oe = preprocessing.OrdinalEncoder(categories=[['Mini','Median1','Median2','Maxi'],['Retired','WorkPrivate','Professional','AllTrips']])
         ORD = oe.fit_transform(ORD)
 
         # Merge ORD and NUM into X_clean
         X_clean = np.hstack((ORD, NUM))
-        # Transform categorical strings into binary labels
+        # Transform CATEGORICAL values into binary labels
         lb = preprocessing.LabelBinarizer()
         for i in range (CAT.shape[1]):  
             sparse_matrix = lb.fit_transform(CAT[:,i])
@@ -162,8 +162,7 @@ class PricingModel():
         scaler = preprocessing.MinMaxScaler()
         scaler.fit(X_clean)
 
-        return np.asarray(scaler.transform(X_clean))
-        # return X_clean # YOUR CLEAN DATA AS A NUMPY ARRAY
+        return np.asarray(scaler.transform(X_clean)) # YOUR CLEAN DATA AS A NUMPY ARRAY
 
     def fit(self, X_raw, y_raw, claims_raw):
         """Classifier training function.
@@ -262,9 +261,6 @@ def load_model():
     return trained_model
 
 def main():
-    # headers = ["pol_bonus","pol_coverage","pol_duration","pol_sit_duration","pol_payd","pol_usage","pol_insee_code","drv_age1","drv_age2",
-    # "drv_sex1","drv_sex2","drv_age_lic1","drv_age_lic2","vh_age","vh_cyl","vh_din","vh_fuel","vh_make","vh_model","vh_sale_begin","vh_sale_end","vh_speed","vh_type","vh_value","vh_weight","town_mean_altitude","town_surface_area","population","commune_code","canton_code","city_district_code","regional_department_code","made_claim"]
-
     input_dim = 35
     # # hidden_layers = 2
     # print("Number of input variables: " , input_dim)
