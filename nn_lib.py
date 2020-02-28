@@ -599,13 +599,16 @@ def example_main():
     x = dat[:, :input_dim]
     y = dat[:, -1]
 
-    print(x)
-    print(y)
+    # print(x)
+    # print(y)
+
+    print(np.append(x, y, axis=1))
+
 
     x_s, y_s = Trainer.shuffle(x, y)
 
-    print(x_s)
-    print(y_s)
+    # print(x_s)
+    # print(y_s)
     
     print(np.append(x_s, y_s, axis=1))
 
@@ -635,7 +638,7 @@ def example_main():
 
     trainer = Trainer(
         network=net,
-        batch_size=2,
+        batch_size=1,
         nb_epoch=1,
         learning_rate=0.01,
         loss_fun="cross_entropy",
