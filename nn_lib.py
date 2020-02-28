@@ -189,11 +189,15 @@ class LinearLayer(Layer):
             {np.ndarray} -- Array containing gradient with repect to layer
                 input, of shape (batch_size, n_in).
         """
+        assert(len(grad_z[0]) == self.n_out)
 
         self._grad_W_current = np.dot(self._cache_current, grad_z)
         self._grad_b_current = np.dot(np.ones(self._cache_current.shape[1]), grad_z)
 
-        return np.dot(grad_z, np.transpose(self._W))
+        grad_loss = np.dot(grad_z, np.transpose(self._W))
+
+        assert(len(grad_loss[0]) == self.n_in)
+        return grad_loss
 
     def update_params(self, learning_rate):
         """
@@ -259,9 +263,9 @@ class MultiLayerNetwork(object):
                 #_neurons_in_final_layer)
         """
 
-        if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
-            raise ValueError("Parameter x should be an array of shape (batch_size\
-                , input_dim) with both dimensions larger than 0")
+        # if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
+        #     raise ValueError("Parameter x should be an array of shape (batch_size\
+        #         , input_dim) with both dimensions larger than 0")
 
         layer_input = x
         layer_output = None
@@ -285,7 +289,6 @@ class MultiLayerNetwork(object):
             {np.ndarray} -- Array containing gradient with repect to layer
                 input, of shape (batch_size, input_dim).
         """
-
         layer_output = grad_z
         layer_input = None
         for this_layer in reversed(self._layers):
@@ -405,7 +408,6 @@ class Trainer(object):
                 shape (#_training_data_points, ).
         """
         
-        print("train1")
         if self._loss_layer == None:
             raise ValueError("Loss layer cannot be None")
         # if given 1-d array, convert into 2-d 
@@ -431,10 +433,7 @@ class Trainer(object):
                 self._loss_layer.forward(outputs, target_batch)
                 loss_grad = self._loss_layer.backward()
                 self.network.backward(loss_grad)
-                self.network.update_params(self.learning_rate)
-
-        print("train2")
-        
+                self.network.update_params(self.learning_rate)        
 
 
     def eval_loss(self, input_dataset, target_dataset):
@@ -447,14 +446,12 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_evaluation_data_points, ).
         """
-        print("eval 1")
         # if given 1-d array, convert into 2-d 
         if target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
 
         checkDatasetsDimensions(input_dataset, target_dataset)
         predictions = self.network.forward(input_dataset)
-        print("eval 2")
         return self._loss_layer.forward(predictions, target_dataset)
 
     
