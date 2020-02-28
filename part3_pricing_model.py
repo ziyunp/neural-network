@@ -7,6 +7,7 @@ from sklearn import preprocessing
 from sklearn.impute import SimpleImputer
 import torch.nn as nn
 from data_processing import *
+import math
 
 def fit_and_calibrate_classifier(classifier, X, y):
     # DO NOT ALTER THIS FUNCTION
@@ -66,6 +67,7 @@ class PricingModel():
         """
         # =============================================================
         # YOUR CODE HERE
+        X_clean = [] # stores processed training dataset     
         NUM = []
         ORD = []
         CAT = []
@@ -74,10 +76,9 @@ class PricingModel():
         # Merge vehicle make & model
         make = X_raw[:,Data.vh_make.value]
         model = X_raw[:,Data.vh_model.value]
-        if len(make) == len(model):
-            for i in range(len(make)):
-                VH.append(make[i] + model[i])
-            CAT.append(np.array(VH))
+        for i in range(len(make)):
+            VH.append(make[i] + model[i])
+        CAT.append(np.array(VH))
         
         # Split attributes according to data type
         for i in range(len(NUMERICAL)):
@@ -93,22 +94,23 @@ class PricingModel():
         NUM = np.array(NUM).transpose()
         ORD = np.array(ORD).transpose()
         CAT = np.array(CAT).transpose()
-
+    
         # Fill in missing values
         imp_NA = SimpleImputer(missing_values=np.nan, strategy="constant", fill_value="NA") 
         imp_zero = SimpleImputer(missing_values=0, strategy="constant", fill_value=0) 
-        imp_mean_nan = SimpleImputer(missing_values=np.nan, strategy="mean")     
-        imp_mean_zero = SimpleImputer(missing_values=0, strategy="mean")   
+        imp_replace_nan = SimpleImputer(missing_values=np.nan, strategy="mean")     
+        imp_replace_zero = SimpleImputer(missing_values=0, strategy="mean")   
 
-        # replace nan and 0 occurrences in NUMERICAL type with mean
-        NUM = imp_mean_nan.fit_transform(NUM)
-        NUM = imp_mean_zero.fit_transform(NUM)
-        # replace nan occurrences in ORDINAL type with "NA"
+        # for ORDINAL type, replace nan occurrences with "NA"
         ORD = imp_NA.fit_transform(ORD)
-        # for CATEGORICAL type, check if values are string/numeric
 
-        CAT = imp_NA.fit_transform(CAT)
+        # for NUMERICAL type, replace nan and 0 occurrences with mean
         
+        NUM = imp_replace_nan.fit_transform(NUM)
+        NUM = imp_replace_zero.fit_transform(NUM)
+        # for CATEGORICAL type, check if values are string/numeric
+        CAT = imp_NA.fit_transform(CAT)
+
         for i in range(CAT.shape[1]):
             if isinstance(CAT[0][i], float):
                 imputed_col = imp_zero.fit_transform(CAT[:,i].reshape(-1,1))
@@ -120,8 +122,8 @@ class PricingModel():
         oe = preprocessing.OrdinalEncoder(categories=[['Mini','Median1','Median2','Maxi'],['Retired','WorkPrivate','Professional','AllTrips']])
 
         # Transform categorical strings into binary labels
+        lb = preprocessing.LabelBinarizer()
         for i in range (CAT.shape[1]):  
-            lb = preprocessing.LabelBinarizer()
             labels = lb.fit_transform(CAT[:,i])
             if labels.shape[1] == 1:
                 CAT[:,i] = labels.flatten()
@@ -129,6 +131,7 @@ class PricingModel():
                 #  add arrays of labels into position?
                 for row in range(labels.shape[0]):
                     CAT[row][i] = labels[row].flatten()
+                
         ORD = oe.fit_transform(ORD)
 
         
@@ -159,6 +162,8 @@ class PricingModel():
             an instance of the fitted model
 
         """
+
+        # TODO: Check input data dimensions
         nnz = np.where(claims_raw != 0)[0]
         self.y_mean = np.mean(claims_raw[nnz])
         # =============================================================
