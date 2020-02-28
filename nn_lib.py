@@ -43,7 +43,7 @@ class MSELossLayer(Layer):
     @staticmethod
     def _mse(y_pred, y_target):
         # print("MSE", np.mean((y_pred - y_target) ** 2))
-        return abs(np.mean((y_pred - y_target) ** 2))
+        return np.mean((y_pred - y_target) ** 2)
 
     @staticmethod
     def _mse_grad(y_pred, y_target):
@@ -85,8 +85,8 @@ class CrossEntropyLossLayer(Layer):
         self._cache_current = y_target, probs
         # print("bceloss5")
         out = -1 / n_obs * np.sum(y_target * np.log(probs))
-        # print(out)
-        return abs(out)
+        return out
+        # return abs(out)
 
     def backward(self):
         y_target, probs = self._cache_current
@@ -509,7 +509,7 @@ class Trainer(object):
         assert(len(predictions) == len(target_dataset))
         # print("dim", self._loss_layer.forward(predictions, target_dataset))
 
-        return self._loss_layer.forward(predictions, target_dataset)
+        return -self._loss_layer.forward(predictions, target_dataset)
 
 class Preprocessor(object):
     """
@@ -592,7 +592,7 @@ def checkDatasetsDimensions(input_dataset, target_dataset):
             raise ValueError("Dimensions of target dataset is not consistent")
 
 def example_main():
-    input_dim = 6
+    input_dim = 4
     neurons = [16, 7 - input_dim]
     activations = ["relu", "identity"]
     net = MultiLayerNetwork(input_dim, neurons, activations)
