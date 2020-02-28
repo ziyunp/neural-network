@@ -392,6 +392,9 @@ class Trainer(object):
 
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
+        if target_dataset.ndim == 1:
+            target_dataset = np.array([[t] for t in target_dataset])
+        assert(len(input_dataset) == len(target_dataset))
         order = np.arange(len(input_dataset))
         np.random.shuffle(order)
         input_dataset = input_dataset[order]
@@ -423,6 +426,7 @@ class Trainer(object):
         # if given 1-d array, convert into 2-d 
         if target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
+        assert(len(input_dataset) == len(target_dataset))
 
         checkDatasetsDimensions(input_dataset, target_dataset)
 
@@ -459,6 +463,7 @@ class Trainer(object):
         # if given 1-d array, convert into 2-d 
         if target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
+        assert(len(input_dataset) == len(target_dataset))
 
         checkDatasetsDimensions(input_dataset, target_dataset)
         
