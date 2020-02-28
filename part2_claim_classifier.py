@@ -13,8 +13,9 @@ from sklearn.metrics import classification_report, confusion_matrix, \
 
 import matplotlib.pyplot as plt
 
+from imblearn.over_sampling import SMOTE
+
 # customised classes
-from claim_dataset import *
 from claim_net import *
 
 class ClaimClassifier():
@@ -112,6 +113,7 @@ class ClaimClassifier():
         roc_auc_hist = []
         loss_hist = []
         for e in range(self._max_epoch):
+            print("* Epoch: ", e)
             # Update
             losses = []
             dataset_loader = DataLoader(dataset, batch_size=self._batch_size, shuffle=True)
@@ -444,4 +446,5 @@ def hyper_main():
     ClaimClassifierHyperParameterSearch(x_train, y_train, x_val, y_val)
 
 if __name__ == "__main__":
-    main()
+    # main()
+    hyper_main()
