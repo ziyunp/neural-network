@@ -354,6 +354,7 @@ class Trainer(object):
             shuffle_flag {bool} -- If True, training data is shuffled before
                 training.
         """
+        print("trainer constructor")
         self.network = network
         self.batch_size = batch_size
         self.nb_epoch = nb_epoch
@@ -409,7 +410,7 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_training_data_points, ).
         """
-        
+        print("train called")
         if self._loss_layer == None:
             raise ValueError("Loss layer cannot be None")
         # if given 1-d array, convert into 2-d 
@@ -419,10 +420,11 @@ class Trainer(object):
         checkDatasetsDimensions(input_dataset, target_dataset)
 
         for epoch in range(self.nb_epoch):
-            
+            # if shuffle_flag is True, shuffle on every epoch
             if self.shuffle_flag:
                 input_dataset, target_dataset = self.shuffle(input_dataset, target_dataset)
-
+            
+            # calc num of batches for the given batch_size
             n_datapoints = input_dataset.shape[0]
             n_batches = math.ceil(n_datapoints/self.batch_size)
             
@@ -447,8 +449,10 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_evaluation_data_points, ).
         """
-        print("input dim: ", input_dataset.ndim)
-        print("target dim: ", target_dataset.ndim)
+        print("input_dataset: ", input_dataset)
+        print("target_dataset: ", target_dataset)
+        print("input shape: ", input_dataset.shape)
+        print("target shape: ", target_dataset.shape)
         # if given 1-d array, convert into 2-d 
         if target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
@@ -456,10 +460,11 @@ class Trainer(object):
         checkDatasetsDimensions(input_dataset, target_dataset)
         
         predictions = self.network.forward(input_dataset)
-        print("predictions.ndim: ", predictions.ndim)
-        return self._loss_layer.forward(predictions, target_dataset)
-
-    
+        print("predictions.shape: ", predictions.shape)
+        loss = self._loss_layer.forward(predictions, target_dataset)
+        print("loss: ", loss)
+        print("loss.shape: ", loss.shape)
+        return loss
 
 class Preprocessor(object):
     """
