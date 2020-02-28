@@ -71,7 +71,6 @@ class PricingModel():
         ORD = []
         CAT = []
         VH = []
-        COMMUNE = []
 
         # Merge vehicle make & model
         make = X_raw[:,Data.vh_make.value]
@@ -79,27 +78,15 @@ class PricingModel():
         for i in range(len(make)):
             VH.append(make[i] + model[i])
         CAT.append(np.array(VH))
-        
-        # Convert commune code into str
-        commune = X_raw[:,Data.commune_code.value]
-        for code in commune:
-            COMMUNE.append(str(code))
-        CAT.append(np.array(COMMUNE))
 
-        # Merge location codes 
-        # TODO: remove, this produces 16028 combinations
-        # loc_code = np.array(X_raw[:,COMMUNE_CANTON_DIST_REG[0].value]).reshape(-1,1)
-        # for i in range(1, (len(COMMUNE_CANTON_DIST_REG))):
-        #     index = COMMUNE_CANTON_DIST_REG[i].value
-        #     new_col = np.array(X_raw[:,index]).reshape(-1,1)
-        #     loc_code = np.hstack((loc_code, new_col))
-        
-        # for row in range(len(loc_code)):
-        #     code = ''
-        #     for data in loc_code[row]:
-        #         code += str(data)
-        #     LOC_CODE.append(code)
-        # CAT.append(np.array(LOC_CODE))
+        # Convert location codes into str
+        for i in range(len(COMMUNE_CANTON_DIST)):
+            CODE = []
+            index = COMMUNE_CANTON_DIST[i].value
+            code = X_raw[:,index]  
+            for c in code:
+                CODE.append(str(c))
+            CAT.append(np.array(CODE))
 
         # Split attributes according to data type
         for i in range(len(NUMERICAL)):
