@@ -396,8 +396,8 @@ class Trainer(object):
         # if target_dataset.ndim == 1:
         #     target_dataset = np.array([[t] for t in target_dataset])
         assert(len(input_dataset) == len(target_dataset))
-        print(target_dataset.ndim)
-        print(input_dataset.ndim)
+        # print(target_dataset.ndim)
+        # print(input_dataset.ndim)
         order = np.arange(len(input_dataset))
         np.random.shuffle(order)
         input_dataset = input_dataset[order]
@@ -471,7 +471,8 @@ class Trainer(object):
         checkDatasetsDimensions(input_dataset, target_dataset)
         
         predictions = self.network.forward(input_dataset)
-        assert(len(predictions[0]) == len(target_dataset[0]))
+        # print(target_dataset)
+        assert(len(predictions) == len(target_dataset))
         return self._loss_layer(predictions, target_dataset)
 
 class Preprocessor(object):
@@ -560,11 +561,11 @@ def example_main():
     activations = ["relu", "identity"]
     net = MultiLayerNetwork(input_dim, neurons, activations)
 
-    dat = np.loadtxt("iris.dat")
+    dat = np.loadtxt("test.dat")
     np.random.shuffle(dat)
 
     x = dat[:, :4]
-    y = dat[:, 4:]
+    y = dat[:, -1]
 
     # print(x)
     # print(y)
@@ -581,14 +582,24 @@ def example_main():
     x_train_pre = prep_input.apply(x_train)
     x_val_pre = prep_input.apply(x_val)
 
+    # trainer = Trainer(
+    #     network=net,
+    #     batch_size=8,
+    #     nb_epoch=1000,
+    #     learning_rate=0.01,
+    #     loss_fun="cross_entropy",
+    #     shuffle_flag=True,
+    # )
+
     trainer = Trainer(
         network=net,
-        batch_size=8,
-        nb_epoch=1000,
+        batch_size=2,
+        nb_epoch=1,
         learning_rate=0.01,
         loss_fun="cross_entropy",
         shuffle_flag=True,
     )
+
 
     trainer.train(x_train_pre, y_train)
 
