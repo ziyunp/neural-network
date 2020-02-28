@@ -262,6 +262,8 @@ class MultiLayerNetwork(object):
             {np.ndarray} -- Output array of shape (batch_size,
                 #_neurons_in_final_layer)
         """
+        
+        assert(len(x[0]) == self.input_dim)
 
         # if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
         #     raise ValueError("Parameter x should be an array of shape (batch_size\
