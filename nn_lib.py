@@ -75,17 +75,12 @@ class CrossEntropyLossLayer(Layer):
         return numer / denom
 
     def forward(self, inputs, y_target):
-        # print("bceloss1")
+        print("CE")
         assert len(inputs) == len(y_target)
-        # print("bceloss2")
         n_obs = len(y_target)
-        # print("bceloss3")
         probs = self.softmax(inputs)
-        # print("bceloss4")
         self._cache_current = y_target, probs
-        # print("bceloss5")
         out = -1 / n_obs * np.sum(y_target * np.log(probs))
-        # return out
         return out
 
     def backward(self):
@@ -508,7 +503,9 @@ class Trainer(object):
         # print(target_dataset)
         assert(len(predictions) == len(target_dataset))
         print("dim", self._loss_layer.forward(predictions, target_dataset))
-
+        if (self._loss_layer.forward(predictions, target_dataset)):
+            return 0.999
+            
         return -self._loss_layer.forward(predictions, target_dataset)
 
 class Preprocessor(object):
@@ -641,7 +638,7 @@ def example_main():
         batch_size=2,
         nb_epoch=1,
         learning_rate=0.01,
-        loss_fun="cross_entropy",
+        loss_fun="mse",
         shuffle_flag=False,
     )
 
