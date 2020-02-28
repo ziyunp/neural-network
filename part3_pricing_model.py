@@ -72,8 +72,8 @@ class PricingModel():
         ORD = []
         CAT = []
 
-        # Filter attributes that have # of nan or zeros > 5% of data points
-        threshold = 0.05
+        # Filter attributes that have # of nan or zeros > 10% of data points
+        threshold = 0.1
         rm_attr = []
         for feat in range(X_raw.shape[1]):
             count = 0
@@ -82,56 +82,69 @@ class PricingModel():
                     count += 1
             if count > threshold * X_raw.shape[0]:
                 rm_attr.append(feat)
-        
+        for att in rm_attr:
+            if att in [e.value for e in ORDINAL]:
+                ORDINAL.remove(Data(att))
+            if att in [e.value for e in NUMERICAL]:
+                NUMERICAL.remove(Data(att))
+            if att in [e.value for e in CATEGORICAL]:
+                CATEGORICAL.remove(Data(att))
+
+        # Remove rows that have # of nan or zeros > 10% of #_of_features
+        rm_rows = []
+        for row in range(len(X_raw)):
+            count = 0
+            for i in range(X_raw.shape[1]):
+                if i not in rm_attr:
+                    data = X_raw[row][i]
+                    if not data or data != data:
+                        count += 1
+            if count > threshold * X_raw.shape[1]:
+                rm_rows.append(row)
+        X_raw = np.delete(X_raw, rm_rows, 0)
+
         # Merge vehicle make & model
         VH = []
-        make = X_raw[:,Data.vh_make.value]
-        model = X_raw[:,Data.vh_model.value]
-        for i in range(len(make)):
-            VH.append(make[i] + model[i])
-        CAT.append(np.array(VH))
+        if Data.vh_make in CATEGORICAL and Data.vh_model in CATEGORICAL:
+            make = X_raw[:,Data.vh_make.value]
+            model = X_raw[:,Data.vh_model.value]
+            for i in range(len(make)):
+                VH.append(make[i] + model[i])
+            CAT.append(np.array(VH))
+            CATEGORICAL.remove(Data.vh_make)
+            CATEGORICAL.remove(Data.vh_model)
 
-        # Convert location codes into str
-        for i in range(len(COMMUNE_CANTON_DIST)):
-            CODE = []
-            index = COMMUNE_CANTON_DIST[i].value
-            code = X_raw[:,index]  
-            for c in code:
-                CODE.append(str(c))
-            CAT.append(np.array(CODE))
+        # Convert location codes from float -> string
+        if Data.commune_code in CATEGORICAL:
+            CATEGORICAL.remove(Data.commune_code)
+            commune = X_raw[:,Data.commune_code.value]
+            commune_code = [str(c) for c in commune]
+            CAT.append(np.array(commune_code))
+        if Data.canton_code in CATEGORICAL:
+            CATEGORICAL.remove(Data.canton_code)
+            canton = X_raw[:,Data.canton_code.value]
+            canton_code = [str(c) for c in canton]
+            CAT.append(np.array(canton_code))
+        if Data.city_district_code in CATEGORICAL:
+            CATEGORICAL.remove(Data.city_district_code)
+            city_district = X_raw[:,Data.city_district_code.value]
+            city_district_code = [str(c) for c in city_district]
+            CAT.append(np.array(city_district_code))
 
         # Group attributes according to data type
         for i in range(len(NUMERICAL)):
             index = NUMERICAL[i].value
-            if index not in rm_attr:
-                NUM.append(X_raw[:,index])
+            NUM.append(X_raw[:,index])
         for j in range(len(ORDINAL)):
             index = ORDINAL[j].value
-            if index not in rm_attr:
-                ORD.append(X_raw[:,index])
+            ORD.append(X_raw[:,index])
         for k in range(len(CATEGORICAL)):
             index = CATEGORICAL[k].value
-            if index not in rm_attr:
-                CAT.append(X_raw[:,index])
+            CAT.append(X_raw[:,index])
 
         NUM = np.array(NUM).transpose()
         ORD = np.array(ORD).transpose()
         CAT = np.array(CAT).transpose()
-
-        # Filter NUM data that has #_of_nan >= threshold
-        threshold = 3
-        rm_rows = []
-        for row in range(len(NUM)):
-            count = 0
-            for data in NUM[row]:
-                if math.isnan(data):
-                    count += 1
-            if count >= threshold:
-                rm_rows.append(row)
-
-        NUM = np.delete(NUM, rm_rows, 0)
-        ORD = np.delete(ORD, rm_rows, 0)
-        CAT = np.delete(CAT, rm_rows, 0)
 
         # Fill in missing values
         imp_NA = SimpleImputer(missing_values=np.nan, strategy="constant", fill_value="NA") 
