@@ -50,7 +50,6 @@ class MSELossLayer(Layer):
 
     def forward(self, y_pred, y_target):
         self._cache_current = y_pred, y_target
-        print("MSE called")
         return self._mse(y_pred, y_target)
 
     def backward(self):
@@ -451,8 +450,7 @@ class Trainer(object):
         
         predictions = self.network.forward(input_dataset)
         assert(len(predictions) == len(target_dataset))
-        print(self._loss_layer.forward(predictions, target_dataset))
-        return self._loss_layer.forward(predictions, target_dataset)
+        return -self._loss_layer.forward(predictions, target_dataset)
 
 class Preprocessor(object):
     """
