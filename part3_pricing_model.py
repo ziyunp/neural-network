@@ -67,12 +67,12 @@ class PricingModel():
         """
         # =============================================================
         # YOUR CODE HERE
-        X_clean = [] # stores processed training dataset     
         NUM = []
         ORD = []
         CAT = []
         VH = []
-        LOC_CODE = []
+        COMMUNE = []
+
         # Merge vehicle make & model
         make = X_raw[:,Data.vh_make.value]
         model = X_raw[:,Data.vh_model.value]
@@ -80,20 +80,27 @@ class PricingModel():
             VH.append(make[i] + model[i])
         CAT.append(np.array(VH))
         
+        # Convert commune code into str
+        commune = X_raw[:,Data.commune_code.value]
+        for code in commune:
+            COMMUNE.append(str(code))
+        CAT.append(np.array(COMMUNE))
+
         # Merge location codes 
-        # TODO: remove, produces 16028 combinations
-        loc_code = np.array(X_raw[:,COMMUNE_CANTON_DIST_REG[0].value]).reshape(-1,1)
-        for i in range(1, (len(COMMUNE_CANTON_DIST_REG))):
-            index = COMMUNE_CANTON_DIST_REG[i].value
-            new_col = np.array(X_raw[:,index]).reshape(-1,1)
-            loc_code = np.hstack((loc_code, new_col))
+        # TODO: remove, this produces 16028 combinations
+        # loc_code = np.array(X_raw[:,COMMUNE_CANTON_DIST_REG[0].value]).reshape(-1,1)
+        # for i in range(1, (len(COMMUNE_CANTON_DIST_REG))):
+        #     index = COMMUNE_CANTON_DIST_REG[i].value
+        #     new_col = np.array(X_raw[:,index]).reshape(-1,1)
+        #     loc_code = np.hstack((loc_code, new_col))
         
-        for row in range(len(loc_code)):
-            code = ''
-            for data in loc_code[row]:
-                code += str(data)
-            LOC_CODE.append(code)
-        CAT.append(np.array(LOC_CODE))
+        # for row in range(len(loc_code)):
+        #     code = ''
+        #     for data in loc_code[row]:
+        #         code += str(data)
+        #     LOC_CODE.append(code)
+        # CAT.append(np.array(LOC_CODE))
+
 
         # Split attributes according to data type
         for i in range(len(NUMERICAL)):
@@ -141,27 +148,21 @@ class PricingModel():
         CAT = imp_NA.fit_transform(CAT)
 
         oe = preprocessing.OrdinalEncoder(categories=[['Mini','Median1','Median2','Maxi'],['Retired','WorkPrivate','Professional','AllTrips']])
+        ORD = oe.fit_transform(ORD)
 
+        # Merge ORD and NUM into X_clean
+        X_clean = np.hstack((ORD, NUM))
         # Transform categorical strings into binary labels
         lb = preprocessing.LabelBinarizer()
         for i in range (CAT.shape[1]):  
-            labels = lb.fit_transform(CAT[:,i])
-            if labels.shape[1] == 1:
-                CAT[:,i] = labels.flatten()
-            else: 
-                print(CAT[0,i], labels.shape)
-                #  add arrays of labels into position?
-                for row in range(labels.shape[0]):
-                    CAT[row][i] = labels[row].flatten()
-                
-        ORD = oe.fit_transform(ORD)
-
+            sparse_matrix = lb.fit_transform(CAT[:,i])
+            X_clean = np.hstack((X_clean, sparse_matrix))    
         
         # Normalise with MinMaxScaler
-        # scaler = preprocessing.MinMaxScaler()
-        # scaler.fit(X_clean)
+        scaler = preprocessing.MinMaxScaler()
+        scaler.fit(X_clean)
 
-        # return np.asarray(scaler.transform(X_clean))
+        return np.asarray(scaler.transform(X_clean))
         # return X_clean # YOUR CLEAN DATA AS A NUMPY ARRAY
 
     def fit(self, X_raw, y_raw, claims_raw):
