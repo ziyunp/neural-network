@@ -105,13 +105,13 @@ class PricingModel():
                     count += 1
             if count >= threshold:
                 rm_rows.append(row)
+
         NUM = np.delete(NUM, rm_rows, 0)
         ORD = np.delete(ORD, rm_rows, 0)
         CAT = np.delete(CAT, rm_rows, 0)
-        
+
         # Fill in missing values
         imp_NA = SimpleImputer(missing_values=np.nan, strategy="constant", fill_value="NA") 
-        imp_zero = SimpleImputer(missing_values=0, strategy="constant", fill_value=0) 
         imp_replace_nan = SimpleImputer(missing_values=np.nan, strategy="mean")     
         imp_replace_zero = SimpleImputer(missing_values=0, strategy="mean")   
 
@@ -119,20 +119,12 @@ class PricingModel():
         ORD = imp_NA.fit_transform(ORD)
 
         # for NUMERICAL type, replace nan and 0 occurrences with mean
-        
         NUM = imp_replace_nan.fit_transform(NUM)
         NUM = imp_replace_zero.fit_transform(NUM)
+
         # for CATEGORICAL type, check if values are string/numeric
         CAT = imp_NA.fit_transform(CAT)
 
-        for i in range(CAT.shape[1]):
-            if isinstance(CAT[0][i], float):
-                imputed_col = imp_zero.fit_transform(CAT[:,i].reshape(-1,1))
-                imputed_flat = imputed_col.flatten()
-                imputed_str = [str(imp) for imp in imputed_flat]
-                for row in range(CAT.shape[0]):
-                    CAT[row][i] = imputed_str[row]
-        
         oe = preprocessing.OrdinalEncoder(categories=[['Mini','Median1','Median2','Maxi'],['Retired','WorkPrivate','Professional','AllTrips']])
 
         # Transform categorical strings into binary labels
