@@ -354,13 +354,13 @@ class Trainer(object):
             shuffle_flag {bool} -- If True, training data is shuffled before
                 training.
         """
-        print("trainer constructor")
         self.network = network
         self.batch_size = batch_size
         self.nb_epoch = nb_epoch
         self.learning_rate = learning_rate
         self.loss_fun = loss_fun
         self.shuffle_flag = shuffle_flag
+        print("loss_fun: ", self.loss_fun, " shuffle: ", self.shuffle_flag)
 
         self._loss_layer = None
         if loss_fun == "mse":
@@ -410,7 +410,6 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_training_data_points, ).
         """
-        print("train called")
         if self._loss_layer == None:
             raise ValueError("Loss layer cannot be None")
         # if given 1-d array, convert into 2-d 
@@ -449,8 +448,6 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_evaluation_data_points, ).
         """
-        # print("input dim: ", input_dataset.ndim)
-        # print("target dim: ", target_dataset.ndim)
         # if given 1-d array, convert into 2-d 
         if target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
@@ -458,11 +455,8 @@ class Trainer(object):
         checkDatasetsDimensions(input_dataset, target_dataset)
         
         predictions = self.network.forward(input_dataset)
-        # print("predictions.ndim: ", predictions.ndim)
         assert(len(predictions[0]) == len(target_dataset[0]))
         return self._loss_layer.forward(predictions, target_dataset)
-
-    
 
 class Preprocessor(object):
     """
