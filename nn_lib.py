@@ -49,9 +49,9 @@ class MSELossLayer(Layer):
         return 2 * (y_pred - y_target) / len(y_pred)
 
     def forward(self, y_pred, y_target):
-        print("mseloss1")
+        # print("mseloss1")
         self._cache_current = y_pred, y_target
-        print("mseloss2")
+        # print("mseloss2")
         return self._mse(y_pred, y_target)
 
     def backward(self):
@@ -74,17 +74,17 @@ class CrossEntropyLossLayer(Layer):
         return numer / denom
 
     def forward(self, inputs, y_target):
-        print("bceloss1")
+        # print("bceloss1")
         assert len(inputs) == len(y_target)
-        print("bceloss2")
+        # print("bceloss2")
         n_obs = len(y_target)
-        print("bceloss3")
+        # print("bceloss3")
         probs = self.softmax(inputs)
-        print("bceloss4")
+        # print("bceloss4")
         self._cache_current = y_target, probs
-        print("bceloss5")
+        # print("bceloss5")
         out = -1 / n_obs * np.sum(y_target * np.log(probs))
-        print("bceloss5")
+        # print("bceloss5")
         return out
 
     def backward(self):
@@ -273,13 +273,13 @@ class MultiLayerNetwork(object):
         # if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
         #     raise ValueError("Parameter x should be an array of shape (batch_size\
         #         , input_dim) with both dimensions larger than 0")
-        print("forward1")
+        # print("forward1")
         layer_input = x
         layer_output = None
         for this_layer in self._layers:
             layer_output = this_layer.forward(layer_input)
             layer_input = layer_output
-        print("forward2")
+        # print("forward2")
         return layer_output
 
     def __call__(self, x):
@@ -368,7 +368,7 @@ class Trainer(object):
         self.learning_rate = learning_rate
         self.loss_fun = loss_fun
         self.shuffle_flag = shuffle_flag
-        print("loss_fun: ", self.loss_fun, " shuffle: ", self.shuffle_flag)
+        # print("loss_fun: ", self.loss_fun, " shuffle: ", self.shuffle_flag)
 
         self._loss_layer = None
         if loss_fun == "mse":
@@ -440,7 +440,7 @@ class Trainer(object):
                 input_batch = input_dataset[i * self.batch_size : (i + 1) * self.batch_size]
                 target_batch = target_dataset[i * self.batch_size : (i + 1) * self.batch_size]
                 outputs = self.network.forward(input_batch)
-                self._loss_layer.forward(outputs, target_batch)
+                self._loss_layer(outputs, target_batch)
                 loss_grad = self._loss_layer.backward()
                 self.network.backward(loss_grad)
                 self.network.update_params(self.learning_rate)        
@@ -464,7 +464,7 @@ class Trainer(object):
         
         predictions = self.network.forward(input_dataset)
         assert(len(predictions[0]) == len(target_dataset[0]))
-        return self._loss_layer.forward(predictions, target_dataset)
+        return self._loss_layer(predictions, target_dataset)
 
 class Preprocessor(object):
     """
