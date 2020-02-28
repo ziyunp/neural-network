@@ -136,7 +136,6 @@ class LinearLayer(Layer):
         self.n_out = n_out
 
         self._W = np.stack([xavier_init(n_out) for i in range(n_in)])
-        self._W = np.asarray(self._W)
         self._b = np.zeros(n_out)
 
         self._cache_current = None
