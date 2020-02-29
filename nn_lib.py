@@ -1,6 +1,6 @@
 import numpy as np
 import pickle
-
+import math
 
 def xavier_init(size, gain=1.0):
     """
@@ -72,11 +72,9 @@ class CrossEntropyLossLayer(Layer):
         return numer / denom
 
     def forward(self, inputs, y_target):
-        assert len(inputs) == len(y_target)
         n_obs = len(y_target)
         probs = self.softmax(inputs)
         self._cache_current = y_target, probs
-
         out = -1 / n_obs * np.sum(y_target * np.log(probs))
         return out
 
@@ -137,7 +135,6 @@ class LinearLayer(Layer):
         self.n_out = n_out
 
         self._W = np.stack([xavier_init(n_out) for i in range(n_in)])
-        self._W = np.asarray(self._W)
         self._b = np.zeros(n_out)
 
         self._cache_current = None
@@ -158,17 +155,8 @@ class LinearLayer(Layer):
             {np.ndarray} -- Output array of shape (batch_size, n_out)
         """
 
-        if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
-            raise ValueError("Parameter x should be an array of shape (batch_size\
-                , input_dim) with both dimensions larger than 0")
-        
         self._cache_current = np.transpose(x)
-
-
-        Z = np.dot(x, self._W)
-
-        for line in Z:
-            line = np.add(line, self._b)
+        Z = np.add(np.dot(x, self._W), self._b) 
         
         return Z
 
@@ -188,10 +176,11 @@ class LinearLayer(Layer):
         """
 
         self._grad_W_current = np.dot(self._cache_current, grad_z)
-        # CHECK HERE
         self._grad_b_current = np.dot(np.ones(self._cache_current.shape[1]), grad_z)
 
-        return np.dot(grad_z, np.transpose(self._W))
+        grad_loss = np.dot(grad_z, np.transpose(self._W))
+
+        return grad_loss
 
     def update_params(self, learning_rate):
         """
@@ -201,13 +190,9 @@ class LinearLayer(Layer):
         Arguments:
             learning_rate {float} -- Learning rate of update step.
         """
-
-        tmp_W = np.add(self._W, np.negative(learning_rate * self._grad_W_current))
-        tmp_b = np.add(self._b, np.negative(learning_rate * self._grad_b_current))
-
-        self._W = tmp_W
-        self._b = tmp_b
-
+        self._W = np.add(self._W, np.negative(learning_rate * self._grad_W_current))
+        self._b = np.add(self._b, np.negative(learning_rate * self._grad_b_current))
+        
 
 class MultiLayerNetwork(object):
     """
@@ -231,7 +216,7 @@ class MultiLayerNetwork(object):
 
         if len(neurons) != len(activations):
             raise ValueError("The length of activations should be consistent \
-                with neurons")
+                with neurons list")
 
         self._layers = []
         input_n = input_dim
@@ -256,16 +241,14 @@ class MultiLayerNetwork(object):
             {np.ndarray} -- Output array of shape (batch_size,
                 #_neurons_in_final_layer)
         """
-
-        if len(x.shape) != 2 or x.shape[0] < 1 or x.shape[1] < 1:
-            raise ValueError("Parameter x should be an array of shape (batch_size\
-                , input_dim) with both dimensions larger than 0")
-
+        
         layer_input = x
         layer_output = None
+        count = 1
         for this_layer in self._layers:
             layer_output = this_layer.forward(layer_input)
             layer_input = layer_output
+            count = count + 1
         return layer_output
 
     def __call__(self, x):
@@ -283,12 +266,12 @@ class MultiLayerNetwork(object):
             {np.ndarray} -- Array containing gradient with repect to layer
                 input, of shape (batch_size, input_dim).
         """
-
         layer_output = grad_z
         layer_input = None
         for this_layer in reversed(self._layers):
             layer_input = this_layer.backward(layer_output)
             layer_output = layer_input
+        
         return layer_input
 
     def update_params(self, learning_rate):
@@ -357,11 +340,11 @@ class Trainer(object):
         self._loss_layer = None
         if loss_fun == "mse":
             self._loss_layer = MSELossLayer()
-        elif loss_fun == "cross_entropy":
+        # two possible loss_fun values for CrossEntropy given in this file
+        elif loss_fun == "cross_entropy" or loss_fun == "bce":
             self._loss_layer = CrossEntropyLossLayer()
         else:
-            print("Error: Loss function must be either 'mse' or 'bce'.")
-
+            raise ValueError("Loss function must be either 'mse', 'cross_entropy' or 'bce'.")
 
     @staticmethod
     def shuffle(input_dataset, target_dataset):
@@ -376,12 +359,11 @@ class Trainer(object):
 
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
-
-        data_len = input_dataset.shape[1]
-        targets = np.array([t for t in target_dataset])
-        inputs = np.append(input_dataset, targets, axis=1)
-        np.random.shuffle(inputs)
-        return (inputs[:,:data_len], inputs[:, data_len:])
+        order = np.arange(len(input_dataset))
+        np.random.shuffle(order)
+        input_dataset = input_dataset[order]
+        target_dataset = target_dataset[order]
+        return (input_dataset, target_dataset)
 
     def train(self, input_dataset, target_dataset):
         """
@@ -405,33 +387,32 @@ class Trainer(object):
         """
 
         if self._loss_layer == None:
-            raise ValueError("Loss layer is None")
+            raise ValueError("Loss layer cannot be None")
+
+        # if given 1-d array, convert into 2-d 
+        if input_dataset.ndim == 2 and target_dataset.ndim == 1:
+            target_dataset = np.array([[t] for t in target_dataset])
+
+        checkDatasetsDimensions(input_dataset, target_dataset)
 
         for epoch in range(self.nb_epoch):
+            # if shuffle_flag is True, shuffle on every epoch
             if self.shuffle_flag:
-                s_input, s_target = self.shuffle(input_dataset, target_dataset)
-            else: 
-                s_input, s_target = input_dataset, target_dataset
+                input_dataset, target_dataset = self.shuffle(input_dataset, target_dataset)
             
-            # split
-            input_batches = []
-            target_batches = []
-            assert input_dataset.shape[0] == target_dataset.shape[0]
+            # calc num of batches for the given batch_size
             n_datapoints = input_dataset.shape[0]
-
-            n_batches = n_datapoints // self.batch_size 
-            if (n_datapoints % self.batch_size) != 0:
-                n_batches += 1
-            for i in range(n_batches):
-                input_batches.append(s_input[i * self.batch_size : (i + 1) * self.batch_size])
-                target_batches.append(s_target[i * self.batch_size : (i + 1) * self.batch_size])
+            n_batches = max(1, math.floor(n_datapoints/self.batch_size))
+            batch_size = min(n_datapoints, self.batch_size)
             # train with each batch
-            for n in range (n_batches):
-                outputs = self.network.forward(input_batches[n])
-                loss = self._loss_layer.forward(outputs, target_batches[n])
+            for i in range(n_batches):
+                input_batch = input_dataset[i * batch_size : (i + 1) * batch_size]
+                target_batch = target_dataset[i * batch_size : (i + 1) * batch_size]
+                outputs = self.network.forward(input_batch)
+                self._loss_layer.forward(outputs, target_batch)
                 loss_grad = self._loss_layer.backward()
-                gradients = self.network.backward(loss_grad)
-                self.network.update_params(self.learning_rate)
+                self.network.backward(loss_grad)
+                self.network.update_params(self.learning_rate)        
 
 
     def eval_loss(self, input_dataset, target_dataset):
@@ -444,7 +425,10 @@ class Trainer(object):
             - target_dataset {np.ndarray} -- Array of corresponding targets, of
                 shape (#_evaluation_data_points, ).
         """
-
+        # if given 1-d array, convert into 2-d 
+        if input_dataset.ndim == 2 and target_dataset.ndim == 1:
+            target_dataset = np.array([[t] for t in target_dataset])
+        
         predictions = self.network.forward(input_dataset)
         return self._loss_layer.forward(predictions, target_dataset)
 
@@ -509,17 +493,37 @@ class Preprocessor(object):
 
         return np.add(np.multiply(data, self.params), self.col_min)
 
+def checkDatasetsDimensions(input_dataset, target_dataset):
+    if input_dataset.ndim != 2:
+        raise ValueError("Input dataset must have 2 dimensions")
+    
+    input_data_points = len(input_dataset)
+    input_dim = len(input_dataset[0])
+    target_data_points = len(target_dataset)
+    target_dim = len(target_dataset[0])
+
+    if (input_data_points != target_data_points):
+        raise ValueError("Number of data points in input and target dataset are not consistent")
+    # check that each row in a dataset has the same number of features
+    for row in range(input_data_points):
+        if len(input_dataset[row]) != input_dim:
+            raise ValueError("Dimensions of input dataset is not consistent")
+    for row in range(target_data_points):
+        if len(target_dataset[row]) != target_dim:
+            raise ValueError("Dimensions of target dataset is not consistent")
+
 def example_main():
+
     input_dim = 4
-    neurons = [16, 3]
-    activations = ["relu", "identity"]
+    neurons = [16, 7 - input_dim]
+    activations = ["relu", "sigmoid"]
     net = MultiLayerNetwork(input_dim, neurons, activations)
 
     dat = np.loadtxt("iris.dat")
     np.random.shuffle(dat)
 
-    x = dat[:, :4]
-    y = dat[:, 4:]
+    x = dat[:, :input_dim]
+    y = dat[:, input_dim:]
 
     split_idx = int(0.8 * len(x))
 
@@ -543,9 +547,12 @@ def example_main():
     )
 
     trainer.train(x_train_pre, y_train)
+
     print("Train loss = ", trainer.eval_loss(x_train_pre, y_train))
     print("Validation loss = ", trainer.eval_loss(x_val_pre, y_val))
-
+    
+    if y_val.ndim == 1:
+        y_val = np.array([[t] for t in y_val])
     preds = net(x_val_pre).argmax(axis=1).squeeze()
     targets = y_val.argmax(axis=1).squeeze()
     accuracy = (preds == targets).mean()
