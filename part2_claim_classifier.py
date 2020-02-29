@@ -14,8 +14,10 @@ from sklearn.metrics import classification_report, confusion_matrix, \
 import matplotlib.pyplot as plt
 
 from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
 
 # customised classes
+from claim_dataset import *
 from claim_net import *
 
 class ClaimClassifier():
@@ -35,9 +37,9 @@ class ClaimClassifier():
         necessary. 
         """
         self._net = ClaimNet(input_dim, output_dim, neurons, activations)
-        print("=== The created network is: ===")
-        print(self._net)
-        print()
+        # print("=== The created network is: ===")
+        # print(self._net)
+        # print()
         self._max_epoch = max_epoch
         self._scaler = None
         self._batch_size = batch_size
@@ -49,10 +51,10 @@ class ClaimClassifier():
         elif loss_func == "cross_entropy":
             self._loss_func = nn.CrossEntropyLoss()
 
-        print("=== The parameters are : ===")
-        for name, param in self._net.named_parameters():
-            print(name, param.data)
-        print()
+        # print("=== The parameters are : ===")
+        # for name, param in self._net.named_parameters():
+        #     print(name, param.data)
+        # print()
         if optimiser == "sgd":
             self._optimiser = optim.SGD(self._net.parameters(), learning_rate)
         elif optimiser == "adam":
@@ -107,11 +109,13 @@ class ClaimClassifier():
         """
         # Create a dataset loader
         dataset = ClaimDataset(self._preprocessor(X_raw), y_raw)
+        validation = ClaimDataset(self._preprocessor(X_val), y_val)
         
         # Training
         ap_hist = []
         roc_auc_hist = []
         loss_hist = []
+        loss_val_hist = []
         for e in range(self._max_epoch):
             print("* Epoch: ", e)
             # Update
@@ -138,25 +142,39 @@ class ClaimClassifier():
             print("   Loss: ", average_loss)
 
             # Evaluate
-            prediction = self.predict(X_val)
-            average_precision = average_precision_score(y_val, prediction)
-            ap_hist.append(average_precision)
-            roc_auc = roc_auc_score(y_val, prediction)
-            roc_auc_hist.append(roc_auc)
-            print("   AUC:  ", roc_auc)
-            print("   AP:   ", average_precision)
+            validation_loader = DataLoader(validation, batch_size=len(X_val))
+            for x_validation, y_validation in validation_loader:
+                prediction = self._net(x_validation)
+
+                loss = self._loss_func(prediction, y_validation)
+                val_loss = loss.item()
+                loss_val_hist.append(val_loss)
+
+                average_precision = average_precision_score(y_val, prediction.cpu().detach().numpy())
+                ap_hist.append(average_precision)
+
+                roc_auc = roc_auc_score(y_val, prediction.cpu().detach().numpy())
+                roc_auc_hist.append(roc_auc)
+
+                print("   AUC:  ", roc_auc)
+                print("   AP:   ", average_precision)
+                print("   Loss: ", val_loss)
 
             # Early stopping
-            if e > 2:
+            if e > 4:
                 # if (abs(ap_hist[-1] - ap_hist[-2]) + \
                 #     abs(ap_hist[-2] - ap_hist[-3])) / 2 < early_stop:
                 #         print("Early stopping ...")
                 #         break
-                if (abs(roc_auc_hist[-1] - roc_auc_hist[-2]) + \
-                    abs(roc_auc_hist[-2] - roc_auc_hist[-3])) / 2 < early_stop:
-                        print("Early stopping ...")
+                if (((roc_auc_hist[-1] - roc_auc_hist[-2]) + \
+                    (roc_auc_hist[-2] - roc_auc_hist[-3]) + \
+                    (roc_auc_hist[-3] - roc_auc_hist[-4])) < 0):
+                # if (((loss_val_hist[-1] - loss_val_hist[-2]) + \
+                #     (loss_val_hist[-2] - loss_val_hist[-3]) + \
+                #     (roc_auc_hist[-3] - roc_auc_hist[-4])) > 0):
+                        # print("Early stopping ...")
                         break
-
+        return loss_hist, loss_val_hist, roc_auc_hist
 
     def predict(self, X_raw):
         """Classifier probability prediction function.
@@ -242,28 +260,30 @@ def ClaimClassifierHyperParameterSearch(x_train, y_train, x_val, y_val):
 
     The function should return your optimised hyper-parameters. 
     """
-    grid = {"learning_rate" : 1e-3,
-            "neuron_num" : 6,
-            "batch_size" : 16,
-            "over" : 0.7,
+    grid = {"learning_rate" : 0,
+            "neuron_num" : 0,
+            "batch_size" : 0,
+            "over" : 0,
             "roc_auc" : 0}
-    for learning_rate in np.arange(0.00002, 0.0005, 0.00002): # 1-e3 is the default lr for adam
-        for neuron_num in range(6, 18, 2):
-            for batch_size in range(16, 64, 8):
-                for over in np.arange(0.7, 1, 0.1):
+    for neuron_num in range(6, 54, 9):
+        for over in np.arange(0.9, 1, 0.1):
+            for batch_size in range(32, 64, 8):
+                for learning_rate in np.arange(1e-4, 2e-3, 2e-4): # 1-e3 is the default lr for adam
                     print("learning_rate: {}, neuron_num: {}, batch_size: {}, over : {}"\
                           .format(learning_rate, neuron_num, batch_size, over))
 
-                    # sampling
-                    oversampling = SMOTE(over)
-                    x, y = oversampling.fit_resample(x_train, y_train)
-                    x = np.array(x)
-                    y = np.array(y).reshape(len(y), 1)
+                    # Oversampling
+                    oversampling = SMOTE(0.4)
+                    x_train, y_train = oversampling.fit_resample(x_train, y_train)
+                    under = RandomUnderSampler(0.9)
+                    x_train, y_train = under.fit_resample(x_train, y_train)
+                    x_train = np.array(x_train)
+                    y_train = np.array(y_train).reshape(len(y_train), 1)
 
-                    # Create network
+                    # Create a network
                     claim_classifier = ClaimClassifier(input_dim = 9, 
                                                     output_dim = 1, 
-                                                    neurons = [neuron_num, neuron_num, neuron_num, neuron_num], 
+                                                    neurons = [neuron_num, neuron_num, neuron_num, neuron_num, neuron_num], 
                                                     activations = ["relu", "sigmoid"], 
                                                     loss_func = "bce", 
                                                     optimiser = "adam", 
@@ -272,10 +292,11 @@ def ClaimClassifierHyperParameterSearch(x_train, y_train, x_val, y_val):
                                                     batch_size = batch_size)
 
                     # Train the network
-                    claim_classifier.fit(x, y, x_val, y_val, 0.00008)
+                    loss_hist, loss_val_hist, roc_auc_hist = \
+                        claim_classifier.fit(x_train, y_train, x_val, y_val, 0.00008)
 
                     #Predict
-                    prob_train = claim_classifier.predict(x_val)
+                    prob_train = claim_classifier.predict(x_train)
 
                     # Evaluation
                     roc_auc = roc_auc_score(y_val, prob_train)
@@ -286,6 +307,8 @@ def ClaimClassifierHyperParameterSearch(x_train, y_train, x_val, y_val):
                         grid["batch_size"] = batch_size
                         grid["over"] = over
                         print(grid)
+                    else: 
+                        print(roc_auc)
 
     return grid
 
@@ -316,6 +339,35 @@ def over_sampling(dataset, ratio):
     current_ratio = len(label1) / len(label0)
     for _ in range(int(ratio / current_ratio)):
         label0 = np.append(label0, label1, 0)
+        
+    return label0
+
+def under_sampling(dataset, ratio):
+    """Performs oversampling to the given dataset according to ratio 
+    Parameters
+    ----------
+    dataset : raw dataset with 9 attributes appended with 1 label 
+    ratio : a float from 0 to 1, any number larger then 1 will be treated as 1,
+            smaller will be treated as 0
+            make_claim (label 1) to not_make_claim (label 0)
+
+    Returns
+    -------
+    ndarray : Dataset after being oversampled
+    """
+    np.random.shuffle(dataset)
+    label1 = []
+    label0 = []
+    for data in dataset:
+        if data[-1] == 1:
+            label1.append(data)
+        else:
+            label0.append(data)
+    if ratio < 0:
+        ratio = 0
+    elif ratio > 1:
+        ratio = 1
+    label0 = np.append(label0[:int(len(label0) * ratio)], label1, 0)
         
     return label0
 
@@ -359,68 +411,88 @@ def main():
     
     # Read the dataset
     dataset = np.genfromtxt('part2_training_data.csv', delimiter=',', skip_header=1)
-    np.random.shuffle(dataset)
+    # np.random.shuffle(dataset)
 
     x = dataset[:, :9]
     y = dataset[:, 10:] # not including claim_amount 
 
     split_idx_train = int(0.8 * len(dataset))
-    split_idx_val = int((0.8 + 0.1) * len(dataset))
+    split_idx_val = int((0.8 + 0.10) * len(dataset))
 
+    x_train = x[:split_idx_train]
+    y_train = y[:split_idx_train]
     x_val = x[split_idx_train:split_idx_val]
     y_val = y[split_idx_train:split_idx_val]
     x_test = x[split_idx_val:]
     y_test = y[split_idx_val:]
 
-    x_train = x[:split_idx_train]
-    y_train = y[:split_idx_train]
-
-    # Oversampling
+    # Remove outliners
     train = np.append(x_train, y_train, 1)
-    train = over_sampling(train, 1)
-    np.random.shuffle(train)
+    print("Before zoom in: ", len(train))
+    zoom_in_percentile_range = (0.001, 99.99)
+    for i in [2, 3, 5, 6, 7, 8]:
+        cutoffs_attr = np.percentile(train[:, i], zoom_in_percentile_range)
+        non_outliers_mask = (
+            np.all(np.array(train[:, i] > cutoffs_attr[0]).reshape(len(train), 1), axis=1) &
+            np.all(np.array(train[:, i] < cutoffs_attr[1]).reshape(len(train), 1), axis=1))
+        train = train[non_outliers_mask]
+    print("After zoom in: ", len(train))
     x_train = train[:, :9]
     y_train = train[:, 9:]
+
+    # Oversampling
+    oversampling = SMOTE(0.4)
+    x_train, y_train = oversampling.fit_resample(x_train, y_train)
+    under = RandomUnderSampler(0.9)
+    x_train, y_train = under.fit_resample(x_train, y_train)
+    x_train = np.array(x_train)
+    y_train = np.array(y_train).reshape(len(y_train), 1)
 
     # Create a network
     claim_classifier = None
     # claim_classifier = load_model()
     if claim_classifier == None:
-        input_dim = 9
-        output_dim = 1
-        neurons = [6, 6, 6, 6, 6]
-        activations = ["relu", "sigmoid"]
-        loss_fun = "bce"
-        optimiser = "sgd"
-        learning_rate = 1e-3
-        epoch = 1
-        batch_size = 4
-        claim_classifier = ClaimClassifier(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
-    # claim_classifier.set_epoch(2)
+        claim_classifier = ClaimClassifier(input_dim = 9, 
+                                           output_dim = 1, 
+                                           neurons = [6, 6, 6, 18, 18], 
+                                           activations = ["relu", "sigmoid"], 
+                                           loss_func = "bce", 
+                                           optimiser = "adam", 
+                                           learning_rate = 1e-5, 
+                                           max_epoch = 100, 
+                                           batch_size = 8)
+    else:
+        # claim_classifier.set_epoch(1024)
+        claim_classifier.set_batch_size(32)
+        claim_classifier.set_learning_rate(1e-5)
 
-    recalls = []
-    for i in range(30): 
-        # Train the network
-        claim_classifier.fit(x_train, y_train, x_val, y_val, 0.0002)
-        claim_classifier.save_model()
+    # Train the network
+    loss_hist, loss_val_hist, roc_auc_hist = \
+        claim_classifier.fit(x_train, y_train, x_val, y_val, 0.00008)
+    plt.figure(figsize=(6, 5))
+    plt.xlabel("Epoch", fontsize=16)
+    plt.plot(loss_hist, label='training loss')
+    plt.plot(loss_val_hist, label='validation loss')
+    plt.plot(roc_auc_hist, label='ROC AUC')
+    plt.legend()
+    plt.show()
+    claim_classifier.save_model()
 
-        #Predict
-        prob_train = claim_classifier.predict(x_train)
-    
-        # Evaluation
-        print()
-        print("------- The result of ", i, "is: ------")
-        claim_classifier.evaluate_architecture(prob_train, y_train)
+    #Predict
+    prob_train = claim_classifier.predict(x_train)
+
+    # Evaluation
+    print()
+    print("------- The result of training set is: ------")
+    claim_classifier.evaluate_architecture(prob_train, y_train)
 
     #Predict for validation
     prob_val = claim_classifier.predict(x_val)
-    # prediction_test = claim_classifier.predict(x_test)
 
     # Evaluation for validation
     print()
     print("------- The result of validation set is: ------")
     claim_classifier.evaluate_architecture(prob_val, y_val)
-    # claim_classifier.evaluate_architecture(prediction_test.squeeze(), y_test)
 
     plot_precision_recall(prob_val, y_val)
 
@@ -446,5 +518,5 @@ def hyper_main():
     ClaimClassifierHyperParameterSearch(x_train, y_train, x_val, y_val)
 
 if __name__ == "__main__":
-    # main()
-    hyper_main()
+    main()
+    # hyper_main()
