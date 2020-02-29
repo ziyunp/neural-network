@@ -72,7 +72,6 @@ class CrossEntropyLossLayer(Layer):
         return numer / denom
 
     def forward(self, inputs, y_target):
-        assert len(inputs) == len(y_target)
         n_obs = len(y_target)
         probs = self.softmax(inputs)
         self._cache_current = y_target, probs
@@ -156,24 +155,12 @@ class LinearLayer(Layer):
             {np.ndarray} -- Output array of shape (batch_size, n_out)
         """
 
-        assert(len(x[0]) == self.n_in)
+        # assert(len(x[0]) == self.n_in)
 
         self._cache_current = np.transpose(x)
-
-        # print(x)
-        # print(self._W)
-
-        Z = np.dot(x, self._W) 
-        # print(Z)
-        # print(self._b)
-
-        Z = np.add(Z, self._b)
-        # for line in Z:
-        #     line = np.add(line, self._b)
+        Z = np.add(np.dot(x, self._W), self._b) 
         
-        # print(Z)
-
-        assert(len(Z[0]) == self.n_out) 
+        # assert(len(Z[0]) == self.n_out) 
         return Z
 
     def backward(self, grad_z):
@@ -190,15 +177,14 @@ class LinearLayer(Layer):
             {np.ndarray} -- Array containing gradient with repect to layer
                 input, of shape (batch_size, n_in).
         """
-        assert(len(grad_z[0]) == self.n_out)
+        # assert(len(grad_z[0]) == self.n_out)
 
         self._grad_W_current = np.dot(self._cache_current, grad_z)
         self._grad_b_current = np.dot(np.ones(self._cache_current.shape[1]), grad_z)
-        # print(self._grad_b_current)
 
         grad_loss = np.dot(grad_z, np.transpose(self._W))
 
-        assert(len(grad_loss[0]) == self.n_in)
+        # assert(len(grad_loss[0]) == self.n_in)
         return grad_loss
 
     def update_params(self, learning_rate):
@@ -209,10 +195,8 @@ class LinearLayer(Layer):
         Arguments:
             learning_rate {float} -- Learning rate of update step.
         """
-        # print(self._W)
         self._W = np.add(self._W, np.negative(learning_rate * self._grad_W_current))
         self._b = np.add(self._b, np.negative(learning_rate * self._grad_b_current))
-        # print(self._W)
         
 
 class MultiLayerNetwork(object):
@@ -263,14 +247,12 @@ class MultiLayerNetwork(object):
                 #_neurons_in_final_layer)
         """
         
-        assert(len(x[0]) == self.input_dim)
+        # assert(len(x[0]) == self.input_dim)
 
-        # print(x)
         layer_input = x
         layer_output = None
         count = 1
         for this_layer in self._layers:
-            # print(count)
             layer_output = this_layer.forward(layer_input)
             layer_input = layer_output
             count = count + 1
@@ -294,11 +276,10 @@ class MultiLayerNetwork(object):
         layer_output = grad_z
         layer_input = None
         for this_layer in reversed(self._layers):
-            # print(this_layer)
             layer_input = this_layer.backward(layer_output)
             layer_output = layer_input
         
-        assert(len(layer_input[0]) == self.input_dim) 
+        # assert(len(layer_input[0]) == self.input_dim) 
         return layer_input
 
     def update_params(self, learning_rate):
@@ -386,7 +367,7 @@ class Trainer(object):
 
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
-        assert(len(input_dataset) == len(target_dataset))
+        # assert(len(input_dataset) == len(target_dataset))
         order = np.arange(len(input_dataset))
         np.random.shuffle(order)
         input_dataset = input_dataset[order]
@@ -421,7 +402,7 @@ class Trainer(object):
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
 
-        assert(len(input_dataset) == len(target_dataset))
+        # assert(len(input_dataset) == len(target_dataset))
 
         checkDatasetsDimensions(input_dataset, target_dataset)
 
@@ -436,7 +417,6 @@ class Trainer(object):
             # train with each batch
             for i in range(n_batches):
                 input_batch = input_dataset[i * self.batch_size : (i + 1) * self.batch_size]
-                # print(input_batch)
                 target_batch = target_dataset[i * self.batch_size : (i + 1) * self.batch_size]
                 outputs = self.network.forward(input_batch)
                 self._loss_layer.forward(outputs, target_batch)
@@ -458,13 +438,8 @@ class Trainer(object):
         # if given 1-d array, convert into 2-d 
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
-
-        assert(len(input_dataset) == len(target_dataset))
-
-        checkDatasetsDimensions(input_dataset, target_dataset)
         
         predictions = self.network.forward(input_dataset)
-        assert(len(predictions) == len(target_dataset))
         return self._loss_layer.forward(predictions, target_dataset)
 
 class Preprocessor(object):
