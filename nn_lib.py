@@ -160,10 +160,18 @@ class LinearLayer(Layer):
 
         self._cache_current = np.transpose(x)
 
+        # print(x)
+        # print(self._b)
+        # print(self._W)
+
         Z = np.dot(x, self._W) 
+        # print(Z)
+
         for line in Z:
             line = np.add(line, self._b)
         
+        # print(Z)
+
         assert(len(Z[0]) == self.n_out) 
         return Z
 
@@ -254,6 +262,7 @@ class MultiLayerNetwork(object):
         
         assert(len(x[0]) == self.input_dim)
 
+        # print(x)
         layer_input = x
         layer_output = None
         for this_layer in self._layers:
@@ -416,11 +425,12 @@ class Trainer(object):
             
             # calc num of batches for the given batch_size
             n_datapoints = input_dataset.shape[0]
-            n_batches = math.ceil(n_datapoints/self.batch_size)
+            n_batches = math.floor(n_datapoints/self.batch_size)
             
             # train with each batch
             for i in range(n_batches):
                 input_batch = input_dataset[i * self.batch_size : (i + 1) * self.batch_size]
+                # print(input_batch)
                 target_batch = target_dataset[i * self.batch_size : (i + 1) * self.batch_size]
                 outputs = self.network.forward(input_batch)
                 self._loss_layer.forward(outputs, target_batch)
@@ -532,7 +542,13 @@ def checkDatasetsDimensions(input_dataset, target_dataset):
             raise ValueError("Dimensions of target dataset is not consistent")
 
 def example_main():
+
+
     input_dim = 4
+    # neurons = [7 - input_dim]
+    # activations = ["identity"]
+
+
     neurons = [16, 7 - input_dim]
     activations = ["relu", "sigmoid"]
     net = MultiLayerNetwork(input_dim, neurons, activations)
@@ -554,7 +570,8 @@ def example_main():
 
     x_train_pre = prep_input.apply(x_train)
     x_val_pre = prep_input.apply(x_val)
-
+    # x_train_pre = x_train
+    # x_val_pre = x_val
 
     # trainer = Trainer(
     #     network=net,
@@ -567,11 +584,11 @@ def example_main():
 
     trainer = Trainer(
         network=net,
-        batch_size=2,
+        batch_size=3,
         nb_epoch=1,
         learning_rate=0.01,
-        loss_fun="mse",
-        shuffle_flag=False,
+        loss_fun="bce",
+        shuffle_flag=True,
     )
 
     trainer.train(x_train_pre, y_train)
