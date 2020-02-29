@@ -5,9 +5,13 @@ import numpy as np
 import pandas as pd
 from sklearn import preprocessing
 from sklearn.impute import SimpleImputer
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer
+
 import torch.nn as nn
 from data_processing import *
 from part3_helper import *
+from part2_claim_classifier import *
 
 def fit_and_calibrate_classifier(classifier, X, y):
     # DO NOT ALTER THIS FUNCTION
@@ -24,12 +28,13 @@ def fit_and_calibrate_classifier(classifier, X, y):
 # class for part 3
 class PricingModel():
     # YOU ARE ALLOWED TO ADD MORE ARGUMENTS AS NECESSARY
-    def __init__(self, calibrate_probabilities=False):
+    def __init__(self, input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size, calibrate_probabilities=False):
         """
         Feel free to alter this as you wish, adding instance variables as
         necessary.
         """
         self.y_mean = None
+        self._rm_attr = None
         self.calibrate = calibrate_probabilities
         # =============================================================
         # READ ONLY IF WANTING TO CALIBRATE
@@ -45,11 +50,11 @@ class PricingModel():
         # If you wish to use the classifier in part 2, you will need
         # to implement a predict_proba for it before use
         # =============================================================
-        self.base_classifier = None # ADD YOUR BASE CLASSIFIER HERE
+        self.base_classifier = ClaimClassifier(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
 
 
     # YOU ARE ALLOWED TO ADD MORE ARGUMENTS AS NECESSARY TO THE _preprocessor METHOD
-    def _preprocessor(self, X_raw):
+    def _preprocessor(self, X_raw, predict=False):
         """Data preprocessing function.
 
         This function prepares the features of the data for training,
@@ -80,8 +85,11 @@ class PricingModel():
         # TODO: Store removed attributes and apply on prediction set
         # Filter attributes that have # of nan or zeros > 10% of data points
         THRESHOLD = 0.1
-        rm_attr = filter_attributes(X_raw, THRESHOLD)
-        for att in rm_attr:
+
+        # If training, save attributes to remove, else, use the stored list
+        if not predict:
+            self._rm_attr = filter_attributes(X_raw, THRESHOLD)
+        for att in self._rm_attr:
             if att in [e.value for e in ORDINAL]:
                 ORDINAL.remove(Data(att))
             if att in [e.value for e in NUMERICAL]:
@@ -90,7 +98,7 @@ class PricingModel():
                 CATEGORICAL.remove(Data(att))
 
         # Remove rows that have # of nan or zeros > 10% of #_of_features
-        rm_rows = filter_data(X_raw, THRESHOLD, rm_attr)
+        rm_rows = filter_data(X_raw, THRESHOLD, self._rm_attr)
         X_raw = np.delete(X_raw, rm_rows, 0)
 
         # Group attributes according to data type
@@ -111,8 +119,8 @@ class PricingModel():
         # Fill in missing values
         # TODO: use IterativeImputer?
         imp_NA = SimpleImputer(missing_values=np.nan, strategy="constant", fill_value="NA") 
-        imp_replace_nan = SimpleImputer(missing_values=np.nan, strategy="mean")     
-        imp_replace_zero = SimpleImputer(missing_values=0, strategy="mean")   
+        imp_replace_nan = IterativeImputer(random_state=0, missing_values=np.nan)     
+        imp_replace_zero = IterativeImputer(random_state=0, missing_values=0)   
 
         # for ORDINAL type, replace nan with "NA"
         ORD = imp_NA.fit_transform(ORD)
@@ -246,8 +254,22 @@ def main():
 
     x = dataset.iloc[:,:input_dim]
     y = dataset.iloc[:,input_dim+1:] # not including claim_amount
-    model = PricingModel()
+
+    input_dim = 9
+    output_dim = 1
+    neurons = [6, 6, 6, 6, 6]
+    activations = ["relu", "sigmoid"]
+    loss_fun = "bce"
+    optimiser = "sgd"
+    learning_rate = 1e-3
+    epoch = 1
+    batch_size = 4
+
+    model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
     x_prep = model._preprocessor(x.to_numpy())
+
+    print(x_prep)
+
     # test if arrays can be passed to linear layer as training data
     # linear_layer = nn.Linear(input_dim, 1)
     # linear_layer(x_prep)
