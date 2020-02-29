@@ -155,12 +155,9 @@ class LinearLayer(Layer):
             {np.ndarray} -- Output array of shape (batch_size, n_out)
         """
 
-        # assert(len(x[0]) == self.n_in)
-
         self._cache_current = np.transpose(x)
         Z = np.add(np.dot(x, self._W), self._b) 
         
-        # assert(len(Z[0]) == self.n_out) 
         return Z
 
     def backward(self, grad_z):
@@ -177,14 +174,12 @@ class LinearLayer(Layer):
             {np.ndarray} -- Array containing gradient with repect to layer
                 input, of shape (batch_size, n_in).
         """
-        # assert(len(grad_z[0]) == self.n_out)
 
         self._grad_W_current = np.dot(self._cache_current, grad_z)
         self._grad_b_current = np.dot(np.ones(self._cache_current.shape[1]), grad_z)
 
         grad_loss = np.dot(grad_z, np.transpose(self._W))
 
-        # assert(len(grad_loss[0]) == self.n_in)
         return grad_loss
 
     def update_params(self, learning_rate):
@@ -247,8 +242,6 @@ class MultiLayerNetwork(object):
                 #_neurons_in_final_layer)
         """
         
-        # assert(len(x[0]) == self.input_dim)
-
         layer_input = x
         layer_output = None
         count = 1
@@ -279,7 +272,6 @@ class MultiLayerNetwork(object):
             layer_input = this_layer.backward(layer_output)
             layer_output = layer_input
         
-        # assert(len(layer_input[0]) == self.input_dim) 
         return layer_input
 
     def update_params(self, learning_rate):
@@ -367,7 +359,6 @@ class Trainer(object):
 
         Returns: 2-tuple of np.ndarray: (shuffled inputs, shuffled_targets).
         """
-        # assert(len(input_dataset) == len(target_dataset))
         order = np.arange(len(input_dataset))
         np.random.shuffle(order)
         input_dataset = input_dataset[order]
@@ -402,8 +393,6 @@ class Trainer(object):
         if input_dataset.ndim == 2 and target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
 
-        # assert(len(input_dataset) == len(target_dataset))
-
         checkDatasetsDimensions(input_dataset, target_dataset)
 
         for epoch in range(self.nb_epoch):
@@ -413,11 +402,12 @@ class Trainer(object):
             
             # calc num of batches for the given batch_size
             n_datapoints = input_dataset.shape[0]
-            n_batches = math.floor(n_datapoints/self.batch_size)
+            n_batches = max(1, math.floor(n_datapoints/self.batch_size))
+            batch_size = min(n_datapoints, self.batch_size)
             # train with each batch
             for i in range(n_batches):
-                input_batch = input_dataset[i * self.batch_size : (i + 1) * self.batch_size]
-                target_batch = target_dataset[i * self.batch_size : (i + 1) * self.batch_size]
+                input_batch = input_dataset[i * batch_size : (i + 1) * batch_size]
+                target_batch = target_dataset[i * batch_size : (i + 1) * batch_size]
                 outputs = self.network.forward(input_batch)
                 self._loss_layer.forward(outputs, target_batch)
                 loss_grad = self._loss_layer.backward()
@@ -525,10 +515,6 @@ def checkDatasetsDimensions(input_dataset, target_dataset):
 def example_main():
 
     input_dim = 4
-    # neurons = [4, 7 - input_dim]
-    # activations = ["identity", "identity"]
-
-
     neurons = [16, 7 - input_dim]
     activations = ["relu", "sigmoid"]
     net = MultiLayerNetwork(input_dim, neurons, activations)
@@ -550,24 +536,13 @@ def example_main():
 
     x_train_pre = prep_input.apply(x_train)
     x_val_pre = prep_input.apply(x_val)
-    # x_train_pre = x_train
-    # x_val_pre = x_val
-
-    # trainer = Trainer(
-    #     network=net,
-    #     batch_size=8,
-    #     nb_epoch=1000,
-    #     learning_rate=0.01,
-    #     loss_fun="cross_entropy",
-    #     shuffle_flag=True,
-    # )
 
     trainer = Trainer(
         network=net,
-        batch_size=3,
-        nb_epoch=100,
+        batch_size=8,
+        nb_epoch=1000,
         learning_rate=0.01,
-        loss_fun="bce",
+        loss_fun="cross_entropy",
         shuffle_flag=True,
     )
 
