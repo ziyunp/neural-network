@@ -161,14 +161,15 @@ class LinearLayer(Layer):
         self._cache_current = np.transpose(x)
 
         # print(x)
-        # print(self._b)
         # print(self._W)
 
         Z = np.dot(x, self._W) 
         # print(Z)
+        # print(self._b)
 
-        for line in Z:
-            line = np.add(line, self._b)
+        Z = np.add(Z, self._b)
+        # for line in Z:
+        #     line = np.add(line, self._b)
         
         # print(Z)
 
@@ -193,6 +194,7 @@ class LinearLayer(Layer):
 
         self._grad_W_current = np.dot(self._cache_current, grad_z)
         self._grad_b_current = np.dot(np.ones(self._cache_current.shape[1]), grad_z)
+        # print(self._grad_b_current)
 
         grad_loss = np.dot(grad_z, np.transpose(self._W))
 
@@ -207,9 +209,10 @@ class LinearLayer(Layer):
         Arguments:
             learning_rate {float} -- Learning rate of update step.
         """
-
+        # print(self._W)
         self._W = np.add(self._W, np.negative(learning_rate * self._grad_W_current))
         self._b = np.add(self._b, np.negative(learning_rate * self._grad_b_current))
+        # print(self._W)
         
 
 class MultiLayerNetwork(object):
@@ -265,9 +268,12 @@ class MultiLayerNetwork(object):
         # print(x)
         layer_input = x
         layer_output = None
+        count = 1
         for this_layer in self._layers:
+            # print(count)
             layer_output = this_layer.forward(layer_input)
             layer_input = layer_output
+            count = count + 1
         return layer_output
 
     def __call__(self, x):
@@ -288,6 +294,7 @@ class MultiLayerNetwork(object):
         layer_output = grad_z
         layer_input = None
         for this_layer in reversed(self._layers):
+            # print(this_layer)
             layer_input = this_layer.backward(layer_output)
             layer_output = layer_input
         
@@ -426,7 +433,6 @@ class Trainer(object):
             # calc num of batches for the given batch_size
             n_datapoints = input_dataset.shape[0]
             n_batches = math.floor(n_datapoints/self.batch_size)
-            
             # train with each batch
             for i in range(n_batches):
                 input_batch = input_dataset[i * self.batch_size : (i + 1) * self.batch_size]
@@ -543,10 +549,9 @@ def checkDatasetsDimensions(input_dataset, target_dataset):
 
 def example_main():
 
-
     input_dim = 4
-    # neurons = [7 - input_dim]
-    # activations = ["identity"]
+    # neurons = [4, 7 - input_dim]
+    # activations = ["identity", "identity"]
 
 
     neurons = [16, 7 - input_dim]
@@ -585,7 +590,7 @@ def example_main():
     trainer = Trainer(
         network=net,
         batch_size=3,
-        nb_epoch=1,
+        nb_epoch=100,
         learning_rate=0.01,
         loss_fun="bce",
         shuffle_flag=True,
