@@ -160,8 +160,7 @@ class LinearLayer(Layer):
 
         self._cache_current = np.transpose(x)
 
-        Z = np.dot(x, self._W)
-
+        Z = np.dot(x, self._W) 
         for line in Z:
             line = np.add(line, self._b)
         
@@ -450,9 +449,7 @@ class Trainer(object):
         
         predictions = self.network.forward(input_dataset)
         assert(len(predictions) == len(target_dataset))
-        if(self._loss_layer.forward(predictions, target_dataset)>1)
-            return 0
-        return -self._loss_layer.forward(predictions, target_dataset)
+        return self._loss_layer.forward(predictions, target_dataset)
 
 class Preprocessor(object):
     """
@@ -573,7 +570,7 @@ def example_main():
         batch_size=2,
         nb_epoch=1,
         learning_rate=0.01,
-        loss_fun="bce",
+        loss_fun="mse",
         shuffle_flag=False,
     )
 
@@ -581,7 +578,7 @@ def example_main():
 
     print("Train loss = ", trainer.eval_loss(x_train_pre, y_train))
     print("Validation loss = ", trainer.eval_loss(x_val_pre, y_val))
-
+    
     if y_val.ndim == 1:
         y_val = np.array([[t] for t in y_val])
     preds = net(x_val_pre).argmax(axis=1).squeeze()
