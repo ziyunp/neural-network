@@ -145,7 +145,7 @@ class PricingModel():
             X_clean = np.hstack((X_clean, sparse_matrix))    
 
         # Use normalisation in base_classifier
-        return X_clean # YOUR CLEAN DATA AS A NUMPY ARRAY
+        return X_clean.astype(dtype = 'float32') # YOUR CLEAN DATA AS A NUMPY ARRAY
 
     def fit(self, X_raw, y_raw, claims_raw, x_val = None, y_val = None, early_stop = None):
         """Classifier training function.
@@ -172,8 +172,8 @@ class PricingModel():
         self.y_mean = np.mean(claims_raw[nnz])
         # =============================================================
         # REMEMBER TO A SIMILAR LINE TO THE FOLLOWING SOMEWHERE IN THE CODE
-        X_clean = self._preprocessor(X_raw, True).astype(dtype = 'float32')
-        y_clean = np.delete(y_raw, self._rm_rows, 0).astype(dtype = 'float32')
+        X_clean = self._preprocessor(X_raw, True)
+        y_clean = np.delete(y_raw, self._rm_rows, 0)
 
         x_val_clean = self._preprocessor(x_val)
         # THE FOLLOWING GETS CALLED IF YOU WISH TO CALIBRATE YOUR PROBABILITES
@@ -303,42 +303,51 @@ def main():
     np.random.shuffle(train)
     x_train = train[:, :input_dim]
     y_train = train[:, input_dim:]
+    y_train = y_train.astype(dtype = 'float32')
 
     input_dim = 25 # num of attributes after cleaning
     output_dim = 1
-    neurons = [6, 6, 6, 6, 6]
+    neurons = [16, 20, 24, 28, 32]
     activations = ["relu", "sigmoid"]
     loss_fun = "bce"
     optimiser = "sgd"
-    learning_rate = 1e-3
-    epoch = 1
-    batch_size = 1000
+    learning_rate = 0.5e-4
+    epoch = 100
+    batch_size = 200
 
     model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
 
     # Train the network
     model.fit(x_train, y_train, claim_amount, x_val, y_val, False)
     
-    # plt.figure(figsize=(6, 5))
-    # plt.xlabel("Epoch", fontsize=16)
-    # plt.plot(loss_hist, label='training loss')
-    # plt.plot(loss_val_hist, label='validation loss')
-    # plt.plot(roc_auc_hist, label='ROC AUC')
-    # plt.legend()
-    # plt.show()
-
 #     claim_classifier.save_model()
 
     #Predict
-    prob_train = model.predict_claim_probability(x_test)
-    premium = model.predict_premium(x_test)
-    print("premium: ", premium)
+    prob_train = model.predict_claim_probability(x_train)
     # Evaluation
     print()
     print("------- The result of training set is: ------")
-    model.evaluate_architecture(prob_train, y_test)
+    model.evaluate_architecture(prob_train, y_train)
 
+    #Predict for validation
+    prob_val = model.predict_claim_probability(x_val)
 
+    # Evaluation for validation
+    print()
+    print("------- The result of validation set is: ------")
+    model.evaluate_architecture(prob_val, y_val)
+
+#    plot_precision_recall(prob_val, y_val)
+    #Predict for validation
+    prob_test = model.predict_claim_probability(x_test)
+
+    # Evaluation for test
+    print()
+    print("------- The result of validation set is: ------")
+    model.evaluate_architecture(prob_test, y_test)
+
+    premium = model.predict_premium(x_test)
+    print("premium: ", premium)
 
 
 if __name__ == "__main__":

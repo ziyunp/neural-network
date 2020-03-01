@@ -374,7 +374,7 @@ def plot_precision_recall(probability, annotation):
     print("------- The result of validation set is: ------")
     claim_classifier.evaluate_architecture(prob_val, y_val)
 
-    plot_precision_recall(prob_val, y_val)
+#    plot_precision_recall(prob_val, y_val)
 
 # if __name__ == "__main__":
     # main()
