@@ -53,7 +53,7 @@ class PricingModel():
 
 
     # YOU ARE ALLOWED TO ADD MORE ARGUMENTS AS NECESSARY TO THE _preprocessor METHOD
-    def _preprocessor(self, X_raw, predict=False):
+    def _preprocessor(self, X_raw, train=False):
         """Data preprocessing function.
 
         This function prepares the features of the data for training,
@@ -85,9 +85,12 @@ class PricingModel():
         # Filter attributes that have # of nan or zeros > 10% of data points
         THRESHOLD = 0.1
 
-        # If training, save attributes to remove, else, use the stored list
-        if not predict:
+        if train:
+            # If training, save attributes to remove, else, use the stored list
             self._rm_attr = filter_attributes(X_raw, THRESHOLD)
+            # Only remove rows that have # of nan or zeros > 10% of #_of_features if training
+            rm_rows = filter_data(X_raw, THRESHOLD, self._rm_attr)
+            X_raw = np.delete(X_raw, rm_rows, 0)
         for att in self._rm_attr:
             if att in [e.value for e in ORDINAL]:
                 ORDINAL.remove(Data(att))
@@ -96,9 +99,6 @@ class PricingModel():
             if att in [e.value for e in CATEGORICAL]:
                 CATEGORICAL.remove(Data(att))
 
-        # Remove rows that have # of nan or zeros > 10% of #_of_features
-        rm_rows = filter_data(X_raw, THRESHOLD, self._rm_attr)
-        X_raw = np.delete(X_raw, rm_rows, 0)
 
         # Group attributes according to data type
         for i in range(len(NUMERICAL)):
@@ -144,7 +144,7 @@ class PricingModel():
             X_clean = np.hstack((X_clean, sparse_matrix))    
 
         # Use normalisation in base_classifier
-        
+        print(X_clean.shape)
         return X_clean # YOUR CLEAN DATA AS A NUMPY ARRAY
 
     def fit(self, X_raw, y_raw, claims_raw, x_val = None, y_val = None, early_stop = None):
@@ -172,7 +172,7 @@ class PricingModel():
         self.y_mean = np.mean(claims_raw[nnz])
         # =============================================================
         # REMEMBER TO A SIMILAR LINE TO THE FOLLOWING SOMEWHERE IN THE CODE
-        X_clean = self._preprocessor(X_raw)
+        X_clean = self._preprocessor(X_raw, True)
         x_val_clean = self._preprocessor(x_val)
         # THE FOLLOWING GETS CALLED IF YOU WISH TO CALIBRATE YOUR PROBABILITES
         if self.calibrate:
@@ -243,7 +243,7 @@ def load_model():
     return trained_model
 
 def main():
-    input_dim = 35
+    input_dim = 35 # num of attributes of interest
     # # hidden_layers = 2
     # print("Number of input variables: " , input_dim)
 
@@ -253,8 +253,7 @@ def main():
     x = dataset.iloc[:,:input_dim].to_numpy()
     y = dataset.iloc[:,input_dim+1:].to_numpy() # not including claim_amount
     claim_amount = dataset.iloc[:, input_dim].to_numpy()
-
-    
+    claim_amount = np.array([float(c) for c in claim_amount])
     split_idx_train = int(0.8 * len(dataset))
     split_idx_val = int((0.8 + 0.1) * len(dataset))
 
@@ -287,15 +286,15 @@ def main():
 #     x_train = np.array(x_train)
 #     y_train = np.array(y_train).reshape(len(y_train), 1)
 
-    # input_dim = 9
+    input_dim = 25 # num of attributes after cleaning
     output_dim = 1
     neurons = [6, 6, 6, 6, 6]
     activations = ["relu", "sigmoid"]
     loss_fun = "bce"
     optimiser = "sgd"
     learning_rate = 1e-3
-    epoch = 1
-    batch_size = 4
+    epoch = 10
+    batch_size = 1000
 
     model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
 
