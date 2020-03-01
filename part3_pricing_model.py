@@ -8,7 +8,6 @@ from sklearn.impute import SimpleImputer
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 
-import torch.nn as nn
 from data_processing import *
 from part3_helper import *
 from part2_claim_classifier import *
@@ -148,7 +147,7 @@ class PricingModel():
         
         return X_clean # YOUR CLEAN DATA AS A NUMPY ARRAY
 
-    def fit(self, X_raw, y_raw, claims_raw):
+    def fit(self, X_raw, y_raw, claims_raw, x_val = None, y_val = None, early_stop = None):
         """Classifier training function.
 
         Here you will use the fit function for your classifier.
@@ -169,19 +168,18 @@ class PricingModel():
 
         """
 
-        # TODO: Check input data dimensions
         nnz = np.where(claims_raw != 0)[0]
         self.y_mean = np.mean(claims_raw[nnz])
         # =============================================================
         # REMEMBER TO A SIMILAR LINE TO THE FOLLOWING SOMEWHERE IN THE CODE
         X_clean = self._preprocessor(X_raw)
-
+        x_val_clean = self._preprocessor(x_val)
         # THE FOLLOWING GETS CALLED IF YOU WISH TO CALIBRATE YOUR PROBABILITES
         if self.calibrate:
             self.base_classifier = fit_and_calibrate_classifier(
                 self.base_classifier, X_clean, y_raw)
         else:
-            self.base_classifier = self.base_classifier.fit(X_clean, y_raw)
+            self.base_classifier = self.base_classifier.fit(X_clean, y_raw, x_val_clean, y_val, early_stop)
         return self.base_classifier
 
     def predict_claim_probability(self, X_raw):
@@ -252,10 +250,44 @@ def main():
     dataset = pd.read_csv('part3_training_data.csv')  
     # np.random.shuffle(dataset)
 
-    x = dataset.iloc[:,:input_dim]
-    y = dataset.iloc[:,input_dim+1:] # not including claim_amount
+    x = dataset.iloc[:,:input_dim].to_numpy()
+    y = dataset.iloc[:,input_dim+1:].to_numpy() # not including claim_amount
+    claim_amount = dataset.iloc[:, input_dim].to_numpy()
 
-    input_dim = 9
+    
+    split_idx_train = int(0.8 * len(dataset))
+    split_idx_val = int((0.8 + 0.1) * len(dataset))
+
+    x_train = x[:split_idx_train]
+    y_train = y[:split_idx_train]
+    x_val = x[split_idx_train:split_idx_val]
+    y_val = y[split_idx_train:split_idx_val]
+    x_test = x[split_idx_val:]
+    y_test = y[split_idx_val:]
+
+#     # Remove outliners
+#     train = np.append(x_train, y_train, 1)
+#     print("Before zoom in: ", len(train))
+#     zoom_in_percentile_range = (0.001, 99.99)
+#     for i in [2, 3, 5, 6, 7, 8]:
+#         cutoffs_attr = np.percentile(train[:, i], zoom_in_percentile_range)
+#         non_outliers_mask = (
+#             np.all(np.array(train[:, i] > cutoffs_attr[0]).reshape(len(train), 1), axis=1) &
+#             np.all(np.array(train[:, i] < cutoffs_attr[1]).reshape(len(train), 1), axis=1))
+#         train = train[non_outliers_mask]
+#     print("After zoom in: ", len(train))
+#     x_train = train[:, :9]
+#     y_train = train[:, 9:]
+
+#     # Oversampling
+#     oversampling = SMOTE(0.4)
+#     x_train, y_train = oversampling.fit_resample(x_train, y_train)
+#     under = RandomUnderSampler(0.9)
+#     x_train, y_train = under.fit_resample(x_train, y_train)
+#     x_train = np.array(x_train)
+#     y_train = np.array(y_train).reshape(len(y_train), 1)
+
+    # input_dim = 9
     output_dim = 1
     neurons = [6, 6, 6, 6, 6]
     activations = ["relu", "sigmoid"]
@@ -266,22 +298,40 @@ def main():
     batch_size = 4
 
     model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
-    x_prep = model._preprocessor(x.to_numpy())
 
-    print(x_prep)
+    # Train the network
+    loss_hist, loss_val_hist, roc_auc_hist = \
+        model.fit(x_train, y_train, claim_amount, x_val, y_val, 0.00008)
+    
+    plt.figure(figsize=(6, 5))
+    plt.xlabel("Epoch", fontsize=16)
+    plt.plot(loss_hist, label='training loss')
+    plt.plot(loss_val_hist, label='validation loss')
+    plt.plot(roc_auc_hist, label='ROC AUC')
+    plt.legend()
+    plt.show()
+#     claim_classifier.save_model()
 
-    # test if arrays can be passed to linear layer as training data
-    # linear_layer = nn.Linear(input_dim, 1)
-    # linear_layer(x_prep)
-    # split_idx_train = int(0.6 * len(x))
-    # split_idx_val = int((0.6 + 0.2) * len(x))
+#     #Predict
+#     prob_train = claim_classifier.predict(x_train)
 
-    # x_train = x[:split_idx_train]
-    # y_train = y[:split_idx_train]
-    # x_val = x[split_idx_train:split_idx_val]
-    # y_val = y[split_idx_train:split_idx_val]
-    # x_test = x[split_idx_val:]
-    # y_test = y[split_idx_val:]
+#     # Evaluation
+#     print()
+#     print("------- The result of training set is: ------")
+#     claim_classifier.evaluate_architecture(prob_train, y_train)
+
+#     #Predict for validation
+#     prob_val = claim_classifier.predict(x_val)
+
+#     # Evaluation for validation
+#     print()
+#     print("------- The result of validation set is: ------")
+#     claim_classifier.evaluate_architecture(prob_val, y_val)
+
+#     plot_precision_recall(prob_val, y_val)
+
+
+
 
 if __name__ == "__main__":
     main()
