@@ -350,5 +350,5 @@ def main():
     print("premium: ", premium)
 
 
-if __name__ == "__main__":
-   main()
+#if __name__ == "__main__":
+ #  main()
