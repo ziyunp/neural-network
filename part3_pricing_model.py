@@ -317,6 +317,7 @@ def main():
 #     x_train = train[:, :9]
 #     y_train = train[:, 9:]
 
+    input_dim = 25 # num of attributes after cleaning
     output_dim = 1
     neurons = [6, 6, 6, 6, 6]
     activations = ["relu", "sigmoid"]
