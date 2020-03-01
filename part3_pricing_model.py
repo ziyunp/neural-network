@@ -319,7 +319,8 @@ def main():
 
     # Train the network
     model.fit(x_train, y_train, claim_amount, x_val, y_val, False)
-    
+    model.save_model()
+
 #     claim_classifier.save_model()
 
     #Predict
@@ -350,5 +351,5 @@ def main():
     print("premium: ", premium)
 
 
-#if __name__ == "__main__":
- #  main()
+# if __name__ == "__main__":
+#     mai
