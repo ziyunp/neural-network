@@ -291,7 +291,7 @@ def plot_precision_recall(probability, annotation):
 
     plt.show()
 
-def main():
+# def main():
     
     # Read the dataset
     dataset = np.genfromtxt('part2_training_data.csv', delimiter=',', skip_header=1)
