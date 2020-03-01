@@ -12,6 +12,9 @@ from data_processing import *
 from part3_helper import *
 from part3_claim_classifier import *
 
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
+
 def fit_and_calibrate_classifier(classifier, X, y, x_val = None, y_val = None, early_stop = None):
     # DO NOT ALTER THIS FUNCTION
     X_train, X_cal, y_train, y_cal = train_test_split(
@@ -35,6 +38,9 @@ class PricingModel():
         self.y_mean = None
         self._rm_attr = None
         self.calibrate = calibrate_probabilities
+        self.loss_hist = []
+        self.loss_val_hist = [] 
+        self.roc_auc_hist = []
         # =============================================================
         # READ ONLY IF WANTING TO CALIBRATE
         # Place your base classifier here
@@ -175,13 +181,22 @@ class PricingModel():
         X_clean = self._preprocessor(X_raw, True)
         y_clean = np.delete(y_raw, self._rm_rows, 0)
 
+        # Oversampling
+        oversampling = SMOTE(0.25)
+        X_clean, y_clean = oversampling.fit_resample(X_clean, y_clean)
+        under = RandomUnderSampler(0.90)
+        X_clean, y_clean = under.fit_resample(X_clean, y_clean)
+        X_clean = np.array(X_clean)
+        y_clean = np.array(y_clean).reshape(len(y_clean), 1)
+        
         x_val_clean = self._preprocessor(x_val)
         # THE FOLLOWING GETS CALLED IF YOU WISH TO CALIBRATE YOUR PROBABILITES
         if self.calibrate:
             fit_and_calibrate_classifier(
                 self.base_classifier, X_clean, y_clean, x_val_clean, y_val, early_stop)
         else:
-            self.base_classifier.fit(X_clean, y_clean, x_val_clean, y_val, early_stop)
+            self.loss_hist, self.loss_val_hist, self.roc_auc_hist = \
+                self.base_classifier.fit(X_clean, y_clean, x_val_clean, y_val, early_stop)
         return self.base_classifier
 
     def predict_claim_probability(self, X_raw):
@@ -278,18 +293,15 @@ def over_sampling(dataset, ratio):
 
 def main():
     input_dim = 35 # num of attributes of interest
-    # # hidden_layers = 2
-    # print("Number of input variables: " , input_dim)
 
     dataset = pd.read_csv('part3_training_data.csv')  
-    # np.random.shuffle(dataset)
 
     x = dataset.iloc[:,:input_dim].to_numpy()
     y = dataset.iloc[:,input_dim+1:].to_numpy() # not including claim_amount
     claim_amount = dataset.iloc[:, input_dim].to_numpy()
     claim_amount = np.array([float(c) for c in claim_amount])
-    split_idx_train = int(0.8 * len(dataset))
-    split_idx_val = int((0.8 + 0.1) * len(dataset))
+    split_idx_train = int(0.9 * len(dataset))
+    split_idx_val = int((0.9 + 0.05) * len(dataset))
 
     x_train = x[:split_idx_train]
     y_train = y[:split_idx_train]
@@ -297,34 +309,33 @@ def main():
     y_val = y[split_idx_train:split_idx_val]
     x_test = x[split_idx_val:]
     y_test = y[split_idx_val:]
-   # Oversampling
-    train = np.append(x_train, y_train, 1)
-    train = over_sampling(train, 1)
-    np.random.shuffle(train)
-    x_train = train[:, :input_dim]
-    y_train = train[:, input_dim:]
-    y_train = y_train.astype(dtype = 'float32')
 
     input_dim = 25 # num of attributes after cleaning
     output_dim = 1
-    neurons = [16, 20, 24, 28, 32]
+    neurons = [128, 256]
     activations = ["relu", "sigmoid"]
     loss_fun = "bce"
     optimiser = "sgd"
-    learning_rate = 0.5e-4
-    epoch = 100
-    batch_size = 200
+    learning_rate = 1e-3
+    epoch = 64
+    batch_size = 64
 
     model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
 
     # Train the network
-    model.fit(x_train, y_train, claim_amount, x_val, y_val, False)
+    model.fit(x_train, y_train, claim_amount, x_val, y_val, True)
+    plt.figure(figsize=(6, 5))
+    plt.xlabel("Epoch", fontsize=16)
+    plt.plot(model.loss_hist, label='training loss')
+    plt.plot(model.loss_val_hist, label='validation loss')
+    plt.plot(model.roc_auc_hist, label='ROC AUC')
+    plt.legend()
+    plt.show()
     model.save_model()
-
-#     claim_classifier.save_model()
 
     #Predict
     prob_train = model.predict_claim_probability(x_train)
+
     # Evaluation
     print()
     print("------- The result of training set is: ------")
@@ -338,18 +349,19 @@ def main():
     print("------- The result of validation set is: ------")
     model.evaluate_architecture(prob_val, y_val)
 
-#    plot_precision_recall(prob_val, y_val)
-    #Predict for validation
+    # Predict for test
     prob_test = model.predict_claim_probability(x_test)
 
     # Evaluation for test
     print()
-    print("------- The result of validation set is: ------")
+    print("------- The result of test set is: ------")
     model.evaluate_architecture(prob_test, y_test)
 
     premium = model.predict_premium(x_test)
     print("premium: ", premium)
 
+    plot_precision_recall(prob_val, y_val)
 
-# if __name__ == "__main__":
-#     mai
+
+if __name__ == "__main__":
+    main()
