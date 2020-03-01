@@ -199,10 +199,13 @@ class ClaimClassifier():
         """
 
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
+        print("Claim Classifier predict")
         X_clean = torch.from_numpy(self._preprocessor(X_raw)).float()
+        print("processed X_clean")
 
         # Produce raw predictions
         predictions = self._net(X_clean)
+        print("predicted from self._net")
 
         return np.asarray(torch.Tensor.cpu(predictions).detach().numpy())
 

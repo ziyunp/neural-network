@@ -204,6 +204,7 @@ class PricingModel():
         # =============================================================
         # REMEMBER TO A SIMILAR LINE TO THE FOLLOWING SOMEWHERE IN THE CODE
         X_clean = self._preprocessor(X_raw)
+        print("processed X_clean")
         y_pred = self.base_classifier.predict(X_clean)
 
         return  y_pred # return probabilities for the positive class (label 1)
@@ -351,5 +352,5 @@ def main():
     print("premium: ", premium)
 
 
-# if __name__ == "__main__":
-#     mai
+if __name__ == "__main__":
+    main()
