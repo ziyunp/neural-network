@@ -6,15 +6,15 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.metrics import classification_report, confusion_matrix, \
     precision_recall_curve, average_precision_score, roc_auc_score, \
     roc_curve
 
 import matplotlib.pyplot as plt
 
-from imblearn.over_sampling import SMOTE
-from imblearn.under_sampling import RandomUnderSampler
+# from imblearn.over_sampling import SMOTE
+# from imblearn.under_sampling import RandomUnderSampler
 
 # customised classes
 from claim_dataset import *
@@ -78,13 +78,14 @@ class ClaimClassifier():
             A clean data set that is used for training and prediction.
         """
         if self._scaler == None:
-            self._scaler = MinMaxScaler()
+            # self._scaler = MinMaxScaler()
+            self._scaler = StandardScaler()
             self._scaler.fit(X_raw)
         X_raw = self._scaler.transform(X_raw)
 
         return np.array(X_raw)
 
-    def fit(self, X_raw, y_raw, X_val = None, y_val = None, early_stop = None):
+    def fit(self, X_raw, y_raw, X_val = None, y_val = None, early_stop = False):
         """Classifier training function.
 
         Here you will implement the training function for your classifier.
@@ -110,19 +111,20 @@ class ClaimClassifier():
         # Create a dataset loader
         dataset = ClaimDataset(self._preprocessor(X_raw), y_raw)
         validation = ClaimDataset(self._preprocessor(X_val), y_val)
-        
+
         # Training
         ap_hist = []
         roc_auc_hist = []
         loss_hist = []
         loss_val_hist = []
         for e in range(self._max_epoch):
-            print("* Epoch: ", e)
+            # print("* Epoch: ", e)
             # Update
             losses = []
             dataset_loader = DataLoader(dataset, batch_size=self._batch_size, shuffle=True)
             for x_batch, y_batch in dataset_loader:
                 # Forward
+                self._net.zero_grad()
                 output = self._net(x_batch)
 
                 # Loss
@@ -130,7 +132,6 @@ class ClaimClassifier():
                 losses.append(loss.item())
 
                 # Backward
-                self._net.zero_grad()
                 loss.backward()
 
                 # Optimise
@@ -139,11 +140,12 @@ class ClaimClassifier():
             # Average loss
             average_loss = sum(losses)/len(losses)
             loss_hist.append(average_loss)
-            print("   Loss: ", average_loss)
+            # print("   Loss: ", average_loss)
 
             # Evaluate
             validation_loader = DataLoader(validation, batch_size=len(X_val))
             for x_validation, y_validation in validation_loader:
+
                 prediction = self._net(x_validation)
 
                 loss = self._loss_func(prediction, y_validation)
@@ -156,25 +158,27 @@ class ClaimClassifier():
                 roc_auc = roc_auc_score(y_val, prediction.cpu().detach().numpy())
                 roc_auc_hist.append(roc_auc)
 
-                print("   AUC:  ", roc_auc)
-                print("   AP:   ", average_precision)
-                print("   Loss: ", val_loss)
+                # print("   AUC:  ", roc_auc)
+                # print("   AP:   ", average_precision)
+                # print("   Loss: ", val_loss)
 
             # Early stopping
-            if e > 4:
+            if e > 20 and early_stop:
                 # if (abs(ap_hist[-1] - ap_hist[-2]) + \
                 #     abs(ap_hist[-2] - ap_hist[-3])) / 2 < early_stop:
                 #         print("Early stopping ...")
                 #         break
                 if (((roc_auc_hist[-1] - roc_auc_hist[-2]) + \
                     (roc_auc_hist[-2] - roc_auc_hist[-3]) + \
-                    (roc_auc_hist[-3] - roc_auc_hist[-4])) < 0):
+                    (roc_auc_hist[-3] - roc_auc_hist[-4]) + \
+                    (roc_auc_hist[-4] - roc_auc_hist[-5])) < 0):
                 # if (((loss_val_hist[-1] - loss_val_hist[-2]) + \
                 #     (loss_val_hist[-2] - loss_val_hist[-3]) + \
                 #     (roc_auc_hist[-3] - roc_auc_hist[-4])) > 0):
                         # print("Early stopping ...")
                         break
         return loss_hist, loss_val_hist, roc_auc_hist
+
 
     def predict(self, X_raw):
         """Classifier probability prediction function.
@@ -213,6 +217,7 @@ class ClaimClassifier():
                 predictions_binary.append(1)
         return np.asarray(predictions_binary)
 
+
     def evaluate_architecture(self, probability, annotation):
         """Architecture evaluation utility.
 
@@ -237,13 +242,12 @@ class ClaimClassifier():
         print(classification_report(annotation, prediction))
         print()
 
+
     def save_model(self):
         # Please alter this file appropriately to work in tandem with your load_model function below
         with open('part2_claim_classifier.pickle', 'wb') as target:
             pickle.dump(self, target)
 
-    def set_epoch(self, epoch):
-        self._epoch = epoch
 
 def load_model():
     # Please alter this section so that it works in tandem with the save_model method of your class
@@ -265,22 +269,22 @@ def plot_precision_recall(probability, annotation):
 
     fpr, tpr, thresholds_roc = roc_curve(annotation, probability, pos_label=1)
     auc = roc_auc_score(annotation, probability)
-    plt.figure(figsize=(10, 18))
+    plt.figure(figsize=(6, 18))
 
     plt.subplot(311)
     plt.step(recall, precision)
-    plt.title('2-class Precision-Recall curve for make_claim: AP={0:0.4f}'.format(ap), fontsize=18)
+    plt.title('2-class Precision-Recall curve for make_claim = 1: AP={0:0.4f}'.format(ap), fontsize=18)
     plt.xlabel('Recall', fontsize=16)
     plt.ylabel('Precision', fontsize=16)
 
     plt.subplot(312)
-    plt.step(tpr, fpr)
-    plt.title('2-class ROC for make_claim: AUC={0:0.4f}'.format(auc), fontsize=18)
-    plt.xlabel('Recall', fontsize=16)
-    plt.ylabel('Precision', fontsize=16)
+    plt.plot(fpr, tpr)
+    plt.title('2-class ROC for make_claim = 1: AUC={0:0.4f}'.format(auc), fontsize=18)
+    plt.xlabel('False Positive Rate', fontsize=16)
+    plt.ylabel('True Positive Rate', fontsize=16)
 
     plt.subplot(313)
-    plt.hist(probability, bins=40)
+    plt.hist(probability, bins=80)
     plt.title('Distribution of Positive Probability', fontsize=18)
     plt.xlabel('Probability', fontsize=16)
     plt.ylabel('Portion', fontsize=16)
@@ -296,8 +300,8 @@ def main():
     x = dataset[:, :9]
     y = dataset[:, 10:] # not including claim_amount 
 
-    split_idx_train = int(0.80 * len(dataset))
-    split_idx_val = int((0.80 + 0.10) * len(dataset))
+    split_idx_train = int(0.90 * len(dataset))
+    split_idx_val = int((0.90 + 0.05) * len(dataset))
 
     x_train = x[:split_idx_train]
     y_train = y[:split_idx_train]
@@ -372,5 +376,5 @@ def main():
 
     plot_precision_recall(prob_val, y_val)
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+    # main()
