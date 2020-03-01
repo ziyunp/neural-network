@@ -251,126 +251,6 @@ def load_model():
         trained_model = pickle.load(target)
     return trained_model
 
-# ENSURE TO ADD IN WHATEVER INPUTS YOU DEEM NECESSARRY TO THIS FUNCTION
-def ClaimClassifierHyperParameterSearch(x_train, y_train, x_val, y_val):
-    """Performs a hyper-parameter for fine-tuning the classifier.
-
-    Implement a function that performs a hyper-parameter search for your
-    architecture as implemented in the ClaimClassifier class. 
-
-    The function should return your optimised hyper-parameters. 
-    """
-    grid = {"learning_rate" : 0,
-            "neuron_num" : 0,
-            "batch_size" : 0,
-            "over" : 0,
-            "roc_auc" : 0}
-    for neuron_num in range(6, 54, 9):
-        for over in np.arange(0.9, 1, 0.1):
-            for batch_size in range(32, 64, 8):
-                for learning_rate in np.arange(1e-4, 2e-3, 2e-4): # 1-e3 is the default lr for adam
-                    print("learning_rate: {}, neuron_num: {}, batch_size: {}, over : {}"\
-                          .format(learning_rate, neuron_num, batch_size, over))
-
-                    # Oversampling
-                    oversampling = SMOTE(0.4)
-                    x_train, y_train = oversampling.fit_resample(x_train, y_train)
-                    under = RandomUnderSampler(0.9)
-                    x_train, y_train = under.fit_resample(x_train, y_train)
-                    x_train = np.array(x_train)
-                    y_train = np.array(y_train).reshape(len(y_train), 1)
-
-                    # Create a network
-                    claim_classifier = ClaimClassifier(input_dim = 9, 
-                                                    output_dim = 1, 
-                                                    neurons = [neuron_num, neuron_num, neuron_num, neuron_num, neuron_num], 
-                                                    activations = ["relu", "sigmoid"], 
-                                                    loss_func = "bce", 
-                                                    optimiser = "adam", 
-                                                    learning_rate = learning_rate, 
-                                                    max_epoch = 100, 
-                                                    batch_size = batch_size)
-
-                    # Train the network
-                    loss_hist, loss_val_hist, roc_auc_hist = \
-                        claim_classifier.fit(x_train, y_train, x_val, y_val, 0.00008)
-
-                    #Predict
-                    prob_train = claim_classifier.predict(x_train)
-
-                    # Evaluation
-                    roc_auc = roc_auc_score(y_val, prob_train)
-                    if roc_auc > grid["roc_auc"]:
-                        grid["roc_auc"] = roc_auc
-                        grid["learning_rate"] = learning_rate
-                        grid["neuron_num"] = neuron_num
-                        grid["batch_size"] = batch_size
-                        grid["over"] = over
-                        print(grid)
-                    else: 
-                        print(roc_auc)
-
-    return grid
-
-def over_sampling(dataset, ratio):
-    """Performs oversampling to the given dataset according to ratio 
-    Parameters
-    ----------
-    dataset : raw dataset with 9 attributes appended with 1 label 
-    ratio : a float from 0 to 1, any number larger then 1 will be treated as 1,
-            smaller will be treated as 0
-            make_claim (label 1) to not_make_claim (label 0)
-
-    Returns
-    -------
-    ndarray : Dataset after being oversampled
-    """
-    label1 = []
-    label0 = []
-    for data in dataset:
-        if data[-1] == 1:
-            label1.append(data)
-        else:
-            label0.append(data)
-    if ratio < 0:
-        ratio = 0
-    elif ratio > 1:
-        ratio = 1
-    current_ratio = len(label1) / len(label0)
-    for _ in range(int(ratio / current_ratio)):
-        label0 = np.append(label0, label1, 0)
-        
-    return label0
-
-def under_sampling(dataset, ratio):
-    """Performs oversampling to the given dataset according to ratio 
-    Parameters
-    ----------
-    dataset : raw dataset with 9 attributes appended with 1 label 
-    ratio : a float from 0 to 1, any number larger then 1 will be treated as 1,
-            smaller will be treated as 0
-            make_claim (label 1) to not_make_claim (label 0)
-
-    Returns
-    -------
-    ndarray : Dataset after being oversampled
-    """
-    np.random.shuffle(dataset)
-    label1 = []
-    label0 = []
-    for data in dataset:
-        if data[-1] == 1:
-            label1.append(data)
-        else:
-            label0.append(data)
-    if ratio < 0:
-        ratio = 0
-    elif ratio > 1:
-        ratio = 1
-    label0 = np.append(label0[:int(len(label0) * ratio)], label1, 0)
-        
-    return label0
-
 def plot_precision_recall(probability, annotation):
     """Plot precisin-recall curve
 
@@ -416,8 +296,8 @@ def main():
     x = dataset[:, :9]
     y = dataset[:, 10:] # not including claim_amount 
 
-    split_idx_train = int(0.8 * len(dataset))
-    split_idx_val = int((0.8 + 0.10) * len(dataset))
+    split_idx_train = int(0.80 * len(dataset))
+    split_idx_val = int((0.80 + 0.10) * len(dataset))
 
     x_train = x[:split_idx_train]
     y_train = y[:split_idx_train]
@@ -427,23 +307,23 @@ def main():
     y_test = y[split_idx_val:]
 
     # Remove outliners
-    train = np.append(x_train, y_train, 1)
-    print("Before zoom in: ", len(train))
-    zoom_in_percentile_range = (0.001, 99.99)
-    for i in [2, 3, 5, 6, 7, 8]:
-        cutoffs_attr = np.percentile(train[:, i], zoom_in_percentile_range)
-        non_outliers_mask = (
-            np.all(np.array(train[:, i] > cutoffs_attr[0]).reshape(len(train), 1), axis=1) &
-            np.all(np.array(train[:, i] < cutoffs_attr[1]).reshape(len(train), 1), axis=1))
-        train = train[non_outliers_mask]
-    print("After zoom in: ", len(train))
-    x_train = train[:, :9]
-    y_train = train[:, 9:]
+    # train = np.append(x_train, y_train, 1)
+    # print("Before zoom in: ", len(train))
+    # zoom_in_percentile_range = (0.001, 99.99)
+    # for i in [2, 3, 5, 6, 7, 8]:
+    #     cutoffs_attr = np.percentile(train[:, i], zoom_in_percentile_range)
+    #     non_outliers_mask = (
+    #         np.all(np.array(train[:, i] > cutoffs_attr[0]).reshape(len(train), 1), axis=1) &
+    #         np.all(np.array(train[:, i] < cutoffs_attr[1]).reshape(len(train), 1), axis=1))
+    #     train = train[non_outliers_mask]
+    # print("After zoom in: ", len(train))
+    # x_train = train[:, :9]
+    # y_train = train[:, 9:]
 
     # Oversampling
-    oversampling = SMOTE(0.4)
+    oversampling = SMOTE(0.25)
     x_train, y_train = oversampling.fit_resample(x_train, y_train)
-    under = RandomUnderSampler(0.9)
+    under = RandomUnderSampler(0.90)
     x_train, y_train = under.fit_resample(x_train, y_train)
     x_train = np.array(x_train)
     y_train = np.array(y_train).reshape(len(y_train), 1)
@@ -454,21 +334,17 @@ def main():
     if claim_classifier == None:
         claim_classifier = ClaimClassifier(input_dim = 9, 
                                            output_dim = 1, 
-                                           neurons = [6, 6, 6, 18, 18], 
+                                           neurons = [16, 32, 16], 
                                            activations = ["relu", "sigmoid"], 
                                            loss_func = "bce", 
                                            optimiser = "adam", 
-                                           learning_rate = 1e-5, 
+                                           learning_rate = 0.5e-4, 
                                            max_epoch = 100, 
-                                           batch_size = 8)
-    else:
-        # claim_classifier.set_epoch(1024)
-        claim_classifier.set_batch_size(32)
-        claim_classifier.set_learning_rate(1e-5)
+                                           batch_size = 56)
 
     # Train the network
     loss_hist, loss_val_hist, roc_auc_hist = \
-        claim_classifier.fit(x_train, y_train, x_val, y_val, 0.00008)
+        claim_classifier.fit(x_train, y_train, x_val, y_val, True)
     plt.figure(figsize=(6, 5))
     plt.xlabel("Epoch", fontsize=16)
     plt.plot(loss_hist, label='training loss')
@@ -496,27 +372,5 @@ def main():
 
     plot_precision_recall(prob_val, y_val)
 
-def hyper_main():
-    # Read the dataset
-    dataset = np.genfromtxt('part2_training_data.csv', delimiter=',', skip_header=1)
-    np.random.shuffle(dataset)
-
-    x = dataset[:, :9]
-    y = dataset[:, 10:] # not including claim_amount 
-
-    split_idx_train = int(0.7 * len(dataset))
-    split_idx_val = int((0.7 + 0.15) * len(dataset))
-
-    x_val = x[split_idx_train:split_idx_val]
-    y_val = y[split_idx_train:split_idx_val]
-    x_test = x[split_idx_val:]
-    y_test = y[split_idx_val:]
-
-    x_train = x[:split_idx_train]
-    y_train = y[:split_idx_train]
-
-    ClaimClassifierHyperParameterSearch(x_train, y_train, x_val, y_val)
-
 if __name__ == "__main__":
     main()
-    # hyper_main()
