@@ -246,6 +246,36 @@ def load_model():
         trained_model = pickle.load(target)
     return trained_model
 
+def over_sampling(dataset, ratio):
+    """Performs oversampling to the given dataset according to ratio 
+    Parameters
+    ----------
+    dataset : raw dataset with 9 attributes appended with 1 label 
+    ratio : a float from 0 to 1, any number larger then 1 will be treated as 1,
+            smaller will be treated as 0
+            make_claim (label 1) to not_make_claim (label 0)
+
+    Returns
+    -------
+    ndarray : Dataset after being oversampled
+    """
+    label1 = []
+    label0 = []
+    for data in dataset:
+        if data[-1] == 1:
+            label1.append(data)
+        else:
+            label0.append(data)
+    if ratio < 0:
+        ratio = 0
+    elif ratio > 1:
+        ratio = 1
+    current_ratio = len(label1) / len(label0)
+    for _ in range(int(ratio / current_ratio)):
+        label0 = np.append(label0, label1, 0)
+        
+    return label0
+
 def main():
     input_dim = 35 # num of attributes of interest
     # # hidden_layers = 2
@@ -267,7 +297,12 @@ def main():
     y_val = y[split_idx_train:split_idx_val]
     x_test = x[split_idx_val:]
     y_test = y[split_idx_val:]
-
+   # Oversampling
+    train = np.append(x_train, y_train, 1)
+    train = over_sampling(train, 1)
+    np.random.shuffle(train)
+    x_train = train[:, :input_dim]
+    y_train = train[:, input_dim:]
 #     # Remove outliners
 #     train = np.append(x_train, y_train, 1)
 #     print("Before zoom in: ", len(train))
@@ -282,15 +317,6 @@ def main():
 #     x_train = train[:, :9]
 #     y_train = train[:, 9:]
 
-#     # Oversampling
-#     oversampling = SMOTE(0.4)
-#     x_train, y_train = oversampling.fit_resample(x_train, y_train)
-#     under = RandomUnderSampler(0.9)
-#     x_train, y_train = under.fit_resample(x_train, y_train)
-#     x_train = np.array(x_train)
-#     y_train = np.array(y_train).reshape(len(y_train), 1)
-
-    input_dim = 25 # num of attributes after cleaning
     output_dim = 1
     neurons = [6, 6, 6, 6, 6]
     activations = ["relu", "sigmoid"]
