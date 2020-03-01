@@ -298,7 +298,7 @@ def main():
     epoch = 10
     batch_size = 1000
 
-    model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size, True)
+    model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size, False)
 
     # Train the network
     loss_hist, loss_val_hist, roc_auc_hist = \
