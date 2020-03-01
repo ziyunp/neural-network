@@ -12,11 +12,11 @@ from data_processing import *
 from part3_helper import *
 from part2_claim_classifier import *
 
-def fit_and_calibrate_classifier(classifier, X, y):
+def fit_and_calibrate_classifier(classifier, X, y, x_val = None, y_val = None, early_stop = None):
     # DO NOT ALTER THIS FUNCTION
     X_train, X_cal, y_train, y_cal = train_test_split(
         X, y, train_size=0.85, random_state=0)
-    classifier = classifier.fit(X_train, y_train)
+    classifier = classifier.fit(X_train, y_train, x_val, y_val, early_stop)
 
     # This line does the calibration for you
     calibrated_classifier = CalibratedClassifierCV(
@@ -88,9 +88,10 @@ class PricingModel():
         if train:
             # If training, save attributes to remove, else, use the stored list
             self._rm_attr = filter_attributes(X_raw, THRESHOLD)
-            # Only remove rows that have # of nan or zeros > 10% of #_of_features if training
-            rm_rows = filter_data(X_raw, THRESHOLD, self._rm_attr)
-            X_raw = np.delete(X_raw, rm_rows, 0)
+            # Store removed rows that have # of nan or zeros > 10% of #_of_features and apply to y_train
+            self._rm_rows = filter_data(X_raw, THRESHOLD, self._rm_attr)
+            X_raw = np.delete(X_raw, self._rm_rows, 0)
+    
         for att in self._rm_attr:
             if att in [e.value for e in ORDINAL]:
                 ORDINAL.remove(Data(att))
@@ -144,7 +145,6 @@ class PricingModel():
             X_clean = np.hstack((X_clean, sparse_matrix))    
 
         # Use normalisation in base_classifier
-        print(X_clean.shape)
         return X_clean # YOUR CLEAN DATA AS A NUMPY ARRAY
 
     def fit(self, X_raw, y_raw, claims_raw, x_val = None, y_val = None, early_stop = None):
@@ -173,13 +173,15 @@ class PricingModel():
         # =============================================================
         # REMEMBER TO A SIMILAR LINE TO THE FOLLOWING SOMEWHERE IN THE CODE
         X_clean = self._preprocessor(X_raw, True)
+        y_clean = np.delete(y_raw, self._rm_rows, 0)
+
         x_val_clean = self._preprocessor(x_val)
         # THE FOLLOWING GETS CALLED IF YOU WISH TO CALIBRATE YOUR PROBABILITES
         if self.calibrate:
             self.base_classifier = fit_and_calibrate_classifier(
-                self.base_classifier, X_clean, y_raw)
+                self.base_classifier, X_clean, y_clean, x_val_clean, y_val, early_stop)
         else:
-            self.base_classifier = self.base_classifier.fit(X_clean, y_raw, x_val_clean, y_val, early_stop)
+            self.base_classifier = self.base_classifier.fit(X_clean, y_clean, x_val_clean, y_val, early_stop)
         return self.base_classifier
 
     def predict_claim_probability(self, X_raw):
@@ -296,7 +298,7 @@ def main():
     epoch = 10
     batch_size = 1000
 
-    model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
+    model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size, True)
 
     # Train the network
     loss_hist, loss_val_hist, roc_auc_hist = \
