@@ -13,9 +13,6 @@ from sklearn.metrics import classification_report, confusion_matrix, \
 
 import matplotlib.pyplot as plt
 
-# from imblearn.over_sampling import SMOTE
-# from imblearn.under_sampling import RandomUnderSampler
-
 # customised classes
 from claim_dataset import *
 from claim_net import *
@@ -338,7 +335,7 @@ def main():
     if claim_classifier == None:
         claim_classifier = ClaimClassifier(input_dim = 9, 
                                            output_dim = 1, 
-                                           neurons = [16, 32, 16], 
+                                           neurons = [16, 32], 
                                            activations = ["relu", "sigmoid"], 
                                            loss_func = "bce", 
                                            optimiser = "adam", 
@@ -376,5 +373,7 @@ def main():
 
     plot_precision_recall(prob_val, y_val)
 
-# if __name__ == "__main__":
-    # main()
+if __name__ == "__main__":
+    from imblearn.over_sampling import SMOTE
+    from imblearn.under_sampling import RandomUnderSampler
+    main()
