@@ -12,8 +12,8 @@ from data_processing import *
 from part3_helper import *
 from part3_claim_classifier import *
 
-from imblearn.over_sampling import SMOTE
-from imblearn.under_sampling import RandomUnderSampler
+# from imblearn.over_sampling import SMOTE
+# from imblearn.under_sampling import RandomUnderSampler
 
 def fit_and_calibrate_classifier(classifier, X, y, x_val = None, y_val = None, early_stop = None):
     # DO NOT ALTER THIS FUNCTION
