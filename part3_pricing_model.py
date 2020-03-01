@@ -10,7 +10,7 @@ from sklearn.impute import IterativeImputer
 
 from data_processing import *
 from part3_helper import *
-from part2_claim_classifier import *
+from part3_claim_classifier import *
 
 def fit_and_calibrate_classifier(classifier, X, y, x_val = None, y_val = None, early_stop = None):
     # DO NOT ALTER THIS FUNCTION
@@ -324,13 +324,13 @@ def main():
     loss_fun = "bce"
     optimiser = "sgd"
     learning_rate = 1e-3
-    epoch = 100
+    epoch = 1
     batch_size = 1000
 
-    model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size, False)
+    model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
 
     # Train the network
-    model.fit(x_train, y_train, claim_amount, x_val, y_val, 0.00008)
+    model.fit(x_train, y_train, claim_amount, x_val, y_val, False)
     
     # plt.figure(figsize=(6, 5))
     # plt.xlabel("Epoch", fontsize=16)
