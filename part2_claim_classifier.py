@@ -300,8 +300,8 @@ def plot_precision_recall(probability, annotation):
     x = dataset[:, :9]
     y = dataset[:, 10:] # not including claim_amount 
 
-    split_idx_train = int(0.90 * len(dataset))
-    split_idx_val = int((0.90 + 0.05) * len(dataset))
+    split_idx_train = int(0.80 * len(dataset))
+    split_idx_val = int((0.80 + 0.10) * len(dataset))
 
     x_train = x[:split_idx_train]
     y_train = y[:split_idx_train]
