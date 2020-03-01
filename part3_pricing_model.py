@@ -172,8 +172,8 @@ class PricingModel():
         self.y_mean = np.mean(claims_raw[nnz])
         # =============================================================
         # REMEMBER TO A SIMILAR LINE TO THE FOLLOWING SOMEWHERE IN THE CODE
-        X_clean = self._preprocessor(X_raw, True)
-        y_clean = np.delete(y_raw, self._rm_rows, 0)
+        X_clean = self._preprocessor(X_raw, True).astype(dtype = 'float32')
+        y_clean = np.delete(y_raw, self._rm_rows, 0).astype(dtype = 'float32')
 
         x_val_clean = self._preprocessor(x_val)
         # THE FOLLOWING GETS CALLED IF YOU WISH TO CALIBRATE YOUR PROBABILITES
@@ -250,7 +250,7 @@ def over_sampling(dataset, ratio):
     """Performs oversampling to the given dataset according to ratio 
     Parameters
     ----------
-    dataset : raw dataset with 9 attributes appended with 1 label 
+    dataset : raw dataset with attributes appended with 1 label 
     ratio : a float from 0 to 1, any number larger then 1 will be treated as 1,
             smaller will be treated as 0
             make_claim (label 1) to not_make_claim (label 0)
@@ -303,19 +303,6 @@ def main():
     np.random.shuffle(train)
     x_train = train[:, :input_dim]
     y_train = train[:, input_dim:]
-#     # Remove outliners
-#     train = np.append(x_train, y_train, 1)
-#     print("Before zoom in: ", len(train))
-#     zoom_in_percentile_range = (0.001, 99.99)
-#     for i in [2, 3, 5, 6, 7, 8]:
-#         cutoffs_attr = np.percentile(train[:, i], zoom_in_percentile_range)
-#         non_outliers_mask = (
-#             np.all(np.array(train[:, i] > cutoffs_attr[0]).reshape(len(train), 1), axis=1) &
-#             np.all(np.array(train[:, i] < cutoffs_attr[1]).reshape(len(train), 1), axis=1))
-#         train = train[non_outliers_mask]
-#     print("After zoom in: ", len(train))
-#     x_train = train[:, :9]
-#     y_train = train[:, 9:]
 
     input_dim = 25 # num of attributes after cleaning
     output_dim = 1
