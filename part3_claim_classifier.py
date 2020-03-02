@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 from claim_dataset import *
 from claim_net import *
 
-class ClaimClassifier():
+class BaseClassifier():
 
     def __init__(self, 
                  input_dim, 
