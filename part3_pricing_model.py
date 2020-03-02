@@ -84,7 +84,7 @@ class PricingModel():
         # TODO: Store removed attributes and apply on prediction set
         # Filter attributes that have # of nan or zeros > 10% of data points
         THRESHOLD = 0.1
-
+        
         if train:
             print("in train!")
             # If training, save attributes to remove, else, use the stored list
@@ -92,7 +92,8 @@ class PricingModel():
             # Store removed rows that have # of nan or zeros > 10% of #_of_features and apply to y_train
             self._rm_rows = filter_data(X_raw, THRESHOLD, self._rm_attr)
             X_raw = np.delete(X_raw, self._rm_rows, 0)
-        
+            self._oe = preprocessing.OrdinalEncoder(categories=[['Mini','Median1','Median2','Maxi'],['Retired','WorkPrivate','Professional','AllTrips']])
+
         print("rm_attr: ", self._rm_attr)
         for att in self._rm_attr:
             if att in [e.value for e in ORDINAL]:
@@ -116,7 +117,7 @@ class PricingModel():
         NUM = np.array(NUM).transpose()
         ORD = np.array(ORD).transpose()
         CAT = np.array(CAT).transpose()
-        print("NUM: ", NUM.shape, "CAT: ", CAT.shape)
+        print("NUM: ", NUM.shape, "CAT: ", CAT.shape, "ORD: ", ORD.shape)
 
         # Fill in missing values
         # TODO: use IterativeImputer?
@@ -135,17 +136,22 @@ class PricingModel():
         CAT = imp_NA.fit_transform(CAT)
         print("CAT: ", CAT.shape)
 
-        # Transform ORDINAL strings into numerical labels
-        oe = preprocessing.OrdinalEncoder(categories=[['Mini','Median1','Median2','Maxi'],['Retired','WorkPrivate','Professional','AllTrips']])
-        ORD = oe.fit_transform(ORD)
+        # Transform categorical/ordinal strings into numerical labels
+        if train: 
+            self._oe.fit(ORD)
+            self._lb = []
+            for i in range (CAT.shape[1]):  
+                lb = preprocessing.LabelBinarizer()
+                self._lb.append(lb.fit(CAT[:,i]))
+
+        ORD = self._oe.transform(ORD)
         print("ORD2: ", ORD.shape)   
         # Merge ORD and NUM into X_clean
         X_clean = np.hstack((ORD, NUM))
         print("hstack: ", X_clean.shape)
         # Transform CATEGORICAL values into binary labels
-        lb = preprocessing.LabelBinarizer()
         for i in range (CAT.shape[1]):  
-            sparse_matrix = lb.fit_transform(CAT[:,i])
+            sparse_matrix = self._lb[i].transform(CAT[:,i])
             X_clean = np.hstack((X_clean, sparse_matrix))    
 
         # Use normalisation in base_classifier
