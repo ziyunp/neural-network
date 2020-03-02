@@ -253,7 +253,7 @@ class PricingModel():
             X_raw = X_raw.to_numpy()
         except:
             pass
-        premium = self.predict_claim_probability(X_raw) * self.y_mean * 0.4
+        premium = self.predict_claim_probability(X_raw) * self.y_mean * 0.3
         return premium
 
     def save_model(self):
