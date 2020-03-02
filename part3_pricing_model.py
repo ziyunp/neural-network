@@ -321,7 +321,7 @@ def main():
     loss_fun = "bce"
     optimiser = "sgd"
     learning_rate = 0.5e-4
-    epoch = 1
+    epoch = 1000
     batch_size = 200
 
     model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
