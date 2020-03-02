@@ -145,6 +145,7 @@ class PricingModel():
             X_clean = np.hstack((X_clean, sparse_matrix))    
 
         # Use normalisation in base_classifier
+        print("X_clean pricing model: ", X_clean.shape)
         return X_clean.astype(dtype = 'float32') # YOUR CLEAN DATA AS A NUMPY ARRAY
 
     def fit(self, X_raw, y_raw, claims_raw, x_val = None, y_val = None, early_stop = None):
@@ -203,7 +204,7 @@ class PricingModel():
         """
         # =============================================================
         # REMEMBER TO A SIMILAR LINE TO THE FOLLOWING SOMEWHERE IN THE CODE
-        print("inside predict_claim_prob") 
+        print("inside predict_claim_prob: ", X_raw.shape) 
         try:
             X_raw = X_raw.to_numpy()
         except:
@@ -233,7 +234,7 @@ class PricingModel():
         # =============================================================
         # REMEMBER TO INCLUDE ANY PRICING STRATEGY HERE.
         # For example you could scale all your prices down by a factor
-        print("predict_premium") 
+        print("predict_premium: ", X_raw.shape) 
         try:
             X_raw = X_raw.to_numpy()
         except:

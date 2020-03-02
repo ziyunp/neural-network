@@ -79,7 +79,7 @@ class ClaimClassifier():
         """
         if X_raw.ndim == 1:
             print("base preprocessor: ", X_raw.shape, X_raw.ndim)
-            X_raw  = np.array([[x] for x in X_raw])
+            X_raw  = X_raw.reshape(-1, )
         if self._scaler == None:
             # self._scaler = MinMaxScaler()
             self._scaler = StandardScaler()
