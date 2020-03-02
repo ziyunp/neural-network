@@ -37,6 +37,8 @@ class ClaimClassifier():
         necessary. 
         """
         self._net = ClaimNet(input_dim, output_dim, neurons, activations)
+        self._net_aid = ClaimNet(input_dim, output_dim, neurons, activations)
+        self._net_aid2 = ClaimNet(input_dim, output_dim, neurons, activations)
         # print("=== The created network is: ===")
         # print(self._net)
         # print()
@@ -57,8 +59,11 @@ class ClaimClassifier():
         # print()
         if optimiser == "sgd":
             self._optimiser = optim.SGD(self._net.parameters(), learning_rate)
+            self._optimiser_aid = optim.SGD(self._net_aid.parameters(), learning_rate)
+            self._optimiser_aid2 = optim.SGD(self._net_aid2.parameters(), learning_rate)
         elif optimiser == "adam":
             self._optimiser = optim.Adam(self._net.parameters(), learning_rate)
+            self._optimiser_aid = optim.Adam(self._net_aid.parameters(), learning_rate)
 
 
     def _preprocessor(self, X_raw):
@@ -82,6 +87,7 @@ class ClaimClassifier():
             self._scaler = StandardScaler()
             self._scaler.fit(X_raw)
         X_raw = self._scaler.transform(X_raw)
+
         return np.array(X_raw)
 
     def fit(self, X_raw, y_raw, X_val = None, y_val = None, early_stop = False):
@@ -163,19 +169,106 @@ class ClaimClassifier():
 
             # Early stopping
             if e > 20 and early_stop:
-                # if (abs(ap_hist[-1] - ap_hist[-2]) + \
-                #     abs(ap_hist[-2] - ap_hist[-3])) / 2 < early_stop:
-                #         print("Early stopping ...")
-                #         break
                 if (((roc_auc_hist[-1] - roc_auc_hist[-2]) + \
                     (roc_auc_hist[-2] - roc_auc_hist[-3]) + \
-                    (roc_auc_hist[-3] - roc_auc_hist[-4]) + \
-                    (roc_auc_hist[-4] - roc_auc_hist[-5])) < 0):
-                # if (((loss_val_hist[-1] - loss_val_hist[-2]) + \
-                #     (loss_val_hist[-2] - loss_val_hist[-3]) + \
-                #     (roc_auc_hist[-3] - roc_auc_hist[-4])) > 0):
+                    (roc_auc_hist[-3] - roc_auc_hist[-4])) < 0):
                         # print("Early stopping ...")
                         break
+
+        # Train again
+        roc_auc_hist_aid = []
+        loss_hist_aid = []
+        for e in range(self._max_epoch):
+            # print("model2 * Epoch: ", e)
+            # Update
+            losses_aid = []
+            dataset_loader_aid = DataLoader(dataset, batch_size=self._batch_size, shuffle=True)
+            for x_batch, y_batch in dataset_loader_aid:
+                # Forward
+                self._net_aid.zero_grad()
+                output_aid = self._net_aid(x_batch)
+
+                # Loss
+                loss_aid = self._loss_func(output_aid, y_batch)
+                losses_aid.append(loss_aid.item())
+
+                # Backward
+                loss_aid.backward()
+
+                # Optimise
+                self._optimiser_aid.step()
+            
+            # Average loss
+            average_loss_aid = sum(losses_aid)/len(losses_aid)
+            loss_hist_aid.append(average_loss_aid)
+            # print("   Loss: ", average_loss_aid)
+
+            # Evaluate
+            validation_loader_aid = DataLoader(validation, batch_size=len(X_val))
+            for x_validation, y_validation in validation_loader_aid:
+
+                prediction = self._net_aid(x_validation)
+
+                roc_auc = roc_auc_score(y_val, prediction.cpu().detach().numpy())
+                roc_auc_hist_aid.append(roc_auc)
+
+                # print("   AUC:  ", roc_auc)
+
+            # Early stopping
+            if e > 20 and early_stop:
+                if (((roc_auc_hist_aid[-1] - roc_auc_hist_aid[-2]) + \
+                    (roc_auc_hist_aid[-2] - roc_auc_hist_aid[-3]) + \
+                    (roc_auc_hist_aid[-3] - roc_auc_hist_aid[-4])) < 0):
+                        # print("Early stopping ...")
+                        break
+
+        # Train again
+        roc_auc_hist_aid2 = []
+        loss_hist_aid2 = []
+        for e in range(self._max_epoch):
+            # print("model3 * Epoch: ", e)
+            # Update
+            losses_aid2 = []
+            dataset_loader = DataLoader(dataset, batch_size=self._batch_size, shuffle=True)
+            for x_batch, y_batch in dataset_loader:
+                # Forward
+                self._net_aid2.zero_grad()
+                output_aid2 = self._net_aid2(x_batch)
+
+                # Loss
+                loss_aid2 = self._loss_func(output_aid2, y_batch)
+                losses_aid2.append(loss_aid2.item())
+
+                # Backward
+                loss_aid2.backward()
+
+                # Optimise
+                self._optimiser_aid2.step()
+            
+            # Average loss
+            average_loss_aid2 = sum(losses_aid2)/len(losses_aid2)
+            loss_hist_aid2.append(average_loss_aid2)
+            # print("   Loss: ", average_loss_aid2)
+
+            # Evaluate
+            validation_loader = DataLoader(validation, batch_size=len(X_val))
+            for x_validation, y_validation in validation_loader:
+
+                prediction = self._net_aid(x_validation)
+
+                roc_auc = roc_auc_score(y_val, prediction.cpu().detach().numpy())
+                roc_auc_hist_aid2.append(roc_auc)
+
+                # print("   AUC:  ", roc_auc)
+
+            # Early stopping
+            if e > 20 and early_stop:
+                if (((roc_auc_hist_aid[-1] - roc_auc_hist_aid[-2]) + \
+                    (roc_auc_hist_aid[-2] - roc_auc_hist_aid[-3]) + \
+                    (roc_auc_hist_aid[-3] - roc_auc_hist_aid[-4])) < 0):
+                        # print("Early stopping ...")
+                        break
+
         return loss_hist, loss_val_hist, roc_auc_hist
 
 
@@ -202,6 +295,9 @@ class ClaimClassifier():
 
         # Produce raw predictions
         predictions = self._net(X_clean)
+        predictions_aid = self._net_aid(X_clean)
+        predictions_aid2 = self._net_aid2(X_clean)
+        predictions = (predictions + predictions_aid + predictions_aid2) / 3
 
         return np.asarray(torch.Tensor.cpu(predictions).detach().numpy())
 
