@@ -218,7 +218,11 @@ class PricingModel():
         """
         # =============================================================
         # REMEMBER TO A SIMILAR LINE TO THE FOLLOWING SOMEWHERE IN THE CODE
+        print("predict_claim")
+        X_raw = X_raw.to_numpy()
+        print("to numpy")
         X_clean = self._preprocessor(X_raw)
+        print("X_clean")
         y_pred = self.base_classifier.predict(X_clean)
 
         return  y_pred # return probabilities for the positive class (label 1)
