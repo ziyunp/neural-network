@@ -253,8 +253,17 @@ class PricingModel():
             X_raw = X_raw.to_numpy()
         except:
             pass
-        premium = self.predict_claim_probability(X_raw) * self.y_mean * 0.6
-        return premium
+        # premium = self.predict_claim_probability(X_raw) * self.y_mean * 0.6
+        # return premium
+        print(self.y_mean)
+        prob = self.predict_claim_probability(X_raw)
+        premium = []
+        for i in range(len(prob)):
+            if prob[i] > 0.45:
+                premium.append(prob[i] * self.y_mean)
+            else:
+                premium.append(0.1 * self.y_mean)
+        return np.array(premium)
 
     def save_model(self):
         """Saves the class instance as a pickle file."""
