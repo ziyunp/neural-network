@@ -77,12 +77,17 @@ class ClaimClassifier():
         ndarray
             A clean data set that is used for training and prediction.
         """
+        if X_raw.ndim == 1:
+            print("base preprocessor: ", X_raw.shape, X_raw.ndim)
+            X_raw  = np.array([[x] for x in X_raw])
         if self._scaler == None:
             # self._scaler = MinMaxScaler()
             self._scaler = StandardScaler()
+            print("std scaler.fit: ")
             self._scaler.fit(X_raw)
+        print("scaler transform")
         X_raw = self._scaler.transform(X_raw)
-
+        print("preprocessing return")
         return np.array(X_raw)
 
     def fit(self, X_raw, y_raw, X_val = None, y_val = None, early_stop = False):
@@ -199,13 +204,13 @@ class ClaimClassifier():
         """
 
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
-        print("Claim Classifier predict")
+        print("Claim Classifier predict, X_raw shape: ", X_raw.shape)
         X_clean = torch.from_numpy(self._preprocessor(X_raw)).float()
         print("processed X_clean")
 
         # Produce raw predictions
         predictions = self._net(X_clean)
-        print("predicted from self._net")
+        print("predicted from self._net: ", predictions)
 
         return np.asarray(torch.Tensor.cpu(predictions).detach().numpy())
 

@@ -210,9 +210,8 @@ class PricingModel():
             pass
         X_clean = self._preprocessor(X_raw)
         print("processed X_clean")
-        y_pred = self.base_classifier.predict(X_clean).flatten()
-        print(y_pred.shape, y_pred.ndim)
-        return  y_pred # return probabilities for the positive class (label 1)
+        y_pred = self.base_classifier.predict(X_clean)
+        return  y_pred.flatten() # return probabilities for the positive class (label 1)
 
     def predict_premium(self, X_raw):
         """Predicts premiums based on the pricing model.
@@ -236,13 +235,13 @@ class PricingModel():
         # For example you could scale all your prices down by a factor
         print("predict_premium") 
         try:
-            print("try")
             X_raw = X_raw.to_numpy()
-            print("to_numpy")
         except:
-            prnt("except")
+            pass
         print("predict_claim_prob")
-        return self.predict_claim_probability(X_raw) * self.y_mean
+        premium = self.predict_claim_probability(X_raw) * self.y_mean
+        print("premium: ", premium)
+        return premium
 
     def save_model(self):
         """Saves the class instance as a pickle file."""
