@@ -255,7 +255,6 @@ class PricingModel():
             pass
         # premium = self.predict_claim_probability(X_raw) * self.y_mean * 0.6
         # return premium
-        print(self.y_mean)
         prob = self.predict_claim_probability(X_raw)
         premium = []
         for i in range(len(prob)):
