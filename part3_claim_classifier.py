@@ -197,14 +197,16 @@ class ClaimClassifier():
             values corresponding to the probability of beloning to the
             POSITIVE class (that had accidents)
         """
-        print("base predict")
+
         # REMEMBER TO HAVE THE FOLLOWING LINE SOMEWHERE IN THE CODE
         print("Claim Classifier predict")
         X_clean = torch.from_numpy(self._preprocessor(X_raw)).float()
-        print("base X_clean")
+        print("processed X_clean")
+
         # Produce raw predictions
         predictions = self._net(X_clean)
-        print("net")
+        print("predicted from self._net")
+
         return np.asarray(torch.Tensor.cpu(predictions).detach().numpy())
 
     def convert_to_binary(self, predictions, threshold = 0.5):
