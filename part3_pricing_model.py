@@ -203,10 +203,15 @@ class PricingModel():
         """
         # =============================================================
         # REMEMBER TO A SIMILAR LINE TO THE FOLLOWING SOMEWHERE IN THE CODE
+        print("inside predict_claim_prob") 
+        try:
+            X_raw = X_raw.to_numpy()
+        except:
+            pass
         X_clean = self._preprocessor(X_raw)
         print("processed X_clean")
-        y_pred = self.base_classifier.predict(X_clean)
-
+        y_pred = self.base_classifier.predict(X_clean).flatten()
+        print(y_pred.shape, y_pred.ndim)
         return  y_pred # return probabilities for the positive class (label 1)
 
     def predict_premium(self, X_raw):
@@ -229,7 +234,14 @@ class PricingModel():
         # =============================================================
         # REMEMBER TO INCLUDE ANY PRICING STRATEGY HERE.
         # For example you could scale all your prices down by a factor
-
+        print("predict_premium") 
+        try:
+            print("try")
+            X_raw = X_raw.to_numpy()
+            print("to_numpy")
+        except:
+            prnt("except")
+        print("predict_claim_prob")
         return self.predict_claim_probability(X_raw) * self.y_mean
 
     def save_model(self):
@@ -313,7 +325,7 @@ def main():
     loss_fun = "bce"
     optimiser = "sgd"
     learning_rate = 0.5e-4
-    epoch = 100
+    epoch = 1
     batch_size = 200
 
     model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
@@ -321,36 +333,37 @@ def main():
     # Train the network
     model.fit(x_train, y_train, claim_amount, x_val, y_val, False)
     model.save_model()
+    #     claim_classifier.save_model()
 
-#     claim_classifier.save_model()
+#     #Predict
+#     prob_train = model.predict_claim_probability(x_train)
+#     # Evaluation
+#     print()
+#     print("------- The result of training set is: ------")
+#     model.evaluate_architecture(prob_train, y_train)
 
-    #Predict
-    prob_train = model.predict_claim_probability(x_train)
-    # Evaluation
-    print()
-    print("------- The result of training set is: ------")
-    model.evaluate_architecture(prob_train, y_train)
+#     #Predict for validation
+#     prob_val = model.predict_claim_probability(x_val)
 
-    #Predict for validation
-    prob_val = model.predict_claim_probability(x_val)
+#     # Evaluation for validation
+#     print()
+#     print("------- The result of validation set is: ------")
+#     model.evaluate_architecture(prob_val, y_val)
 
-    # Evaluation for validation
-    print()
-    print("------- The result of validation set is: ------")
-    model.evaluate_architecture(prob_val, y_val)
+# #    plot_precision_recall(prob_val, y_val)
 
-#    plot_precision_recall(prob_val, y_val)
-    #Predict for validation
-    prob_test = model.predict_claim_probability(x_test)
+    #Predict for test
+    # prob_test = model.predict_claim_probability(x_test)
 
-    # Evaluation for test
-    print()
-    print("------- The result of validation set is: ------")
-    model.evaluate_architecture(prob_test, y_test)
+#     # Evaluation for test
+#     print()
+#     print("------- The result of validation set is: ------")
+#     model.evaluate_architecture(prob_test, y_test)
 
-    premium = model.predict_premium(x_test)
-    print("premium: ", premium)
+    # premium = model.predict_premium(x_test)
+    # print("premium: ", premium)
 
 
 if __name__ == "__main__":
     main()
+
