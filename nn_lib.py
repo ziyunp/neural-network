@@ -390,7 +390,7 @@ class Trainer(object):
             raise ValueError("Loss layer cannot be None")
 
         # if given 1-d array, convert into 2-d 
-        if input_dataset.ndim == 2 and target_dataset.ndim == 1:
+        if target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
 
         checkDatasetsDimensions(input_dataset, target_dataset)
@@ -426,7 +426,7 @@ class Trainer(object):
                 shape (#_evaluation_data_points, ).
         """
         # if given 1-d array, convert into 2-d 
-        if input_dataset.ndim == 2 and target_dataset.ndim == 1:
+        if target_dataset.ndim == 1:
             target_dataset = np.array([[t] for t in target_dataset])
         
         predictions = self.network.forward(input_dataset)
@@ -450,7 +450,7 @@ class Preprocessor(object):
 
         if data.size == 0:
             raise ValueError("No data in the given dataset")
-
+        
         col_max = np.amax(data, axis=0)
         self.col_min = np.amin(data, axis=0)
         self.params = np.subtract(col_max, self.col_min)
