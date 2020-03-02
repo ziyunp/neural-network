@@ -376,5 +376,5 @@ def main():
 
     plot_precision_recall(prob_val, y_val)
 
-# if __name__ == "__main__":
-    # main()
+if __name__ == "__main__":
+    main()
