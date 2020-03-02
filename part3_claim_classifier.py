@@ -372,3 +372,4 @@ def plot_precision_recall(probability, annotation):
     plt.ylabel('Portion', fontsize=16)
 
     plt.show()
+    
