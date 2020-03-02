@@ -45,6 +45,7 @@ class BaseClassifier():
         self._max_epoch = max_epoch
         self._scaler = None
         self._batch_size = batch_size
+        self.classes_ = [0, 1]
 
         if loss_func == "bce":
             self._loss_func = nn.BCELoss() 
@@ -269,7 +270,7 @@ class BaseClassifier():
                         # print("Early stopping ...")
                         break
 
-        return loss_hist, loss_val_hist, roc_auc_hist
+        return loss_hist, loss_val_hist, roc_auc_hist, self
 
 
     def predict(self, X_raw):
@@ -300,6 +301,10 @@ class BaseClassifier():
         predictions = (predictions + predictions_aid + predictions_aid2) / 3
 
         return np.asarray(torch.Tensor.cpu(predictions).detach().numpy())
+
+    def predict_proba(self, X_raw):
+        proba = self.predict(X_raw)
+        return np.append(np.subtract(np.ones((len(proba), 1)), proba), proba, axis=1)
 
     def convert_to_binary(self, predictions, threshold = 0.5):
         """Convert to binary classes
@@ -372,4 +377,3 @@ def plot_precision_recall(probability, annotation):
     plt.ylabel('Portion', fontsize=16)
 
     plt.show()
-    
