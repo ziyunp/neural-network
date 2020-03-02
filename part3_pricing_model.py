@@ -255,14 +255,14 @@ class PricingModel():
             pass
         # premium = self.predict_claim_probability(X_raw) * self.y_mean * 0.6
         # return premium
+        print(self.y_mean)
         prob = self.predict_claim_probability(X_raw)
-        print("prob: ", prob, "y_mean: ", self.y_mean)
         premium = []
         for i in range(len(prob)):
-            if prob[i] > 0.48:
-                premium.append(0.45 * self.y_mean)
+            if prob[i] > 0.45:
+                premium.append(prob[i] * self.y_mean)
             else:
-                premium.append(0.01 * self.y_mean)
+                premium.append(0.1 * self.y_mean)
         return np.array(premium)
 
     def save_model(self):
