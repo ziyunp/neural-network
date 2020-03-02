@@ -19,12 +19,13 @@ def fit_and_calibrate_classifier(classifier, X, y, x_val = None, y_val = None, e
     # DO NOT ALTER THIS FUNCTION
     X_train, X_cal, y_train, y_cal = train_test_split(
         X, y, train_size=0.85, random_state=0)
-    classifier = classifier.fit(X_train, y_train, x_val, y_val, early_stop)
+    loss_hist, loss_val_hist, roc_auc_hist, classifier = \
+        classifier.fit(X_train, y_train, x_val, y_val, early_stop)
 
     # This line does the calibration for you
     calibrated_classifier = CalibratedClassifierCV(
         classifier, method='sigmoid', cv='prefit').fit(X_cal, y_cal)
-    return calibrated_classifier
+    return loss_hist, loss_val_hist, roc_auc_hist, calibrated_classifier
 
 
 # class for part 3
@@ -194,10 +195,10 @@ class PricingModel():
         x_val_clean = self._preprocessor(x_val)
         # THE FOLLOWING GETS CALLED IF YOU WISH TO CALIBRATE YOUR PROBABILITES
         if self.calibrate:
-            fit_and_calibrate_classifier(
+            self.loss_hist, self.loss_val_hist, self.roc_auc_hist, _ = fit_and_calibrate_classifier(
                 self.base_classifier, X_clean, y_clean, x_val_clean, y_val, early_stop)
         else:
-            self.loss_hist, self.loss_val_hist, self.roc_auc_hist = \
+            self.loss_hist, self.loss_val_hist, self.roc_auc_hist, _ = \
                 self.base_classifier.fit(X_clean, y_clean, x_val_clean, y_val, early_stop)
         return self.base_classifier
 
@@ -305,7 +306,7 @@ def main():
     # # hidden_layers = 2
     # print("Number of input variables: " , input_dim)
 
-    dataset = pd.read_csv('part3_training_data.csv')  
+    dataset = pd.read_csv('part3_training_data_truncated.csv')  
     # np.random.shuffle(dataset)
 
     x = dataset.iloc[:,:input_dim].to_numpy()
@@ -340,7 +341,7 @@ def main():
     epoch = 64
     batch_size = 64
 
-    model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size)
+    model = PricingModel(input_dim, output_dim, neurons, activations, loss_fun, optimiser, learning_rate, epoch, batch_size, True)
 
     # Train the network
     model.fit(x_train, y_train, claim_amount, x_val, y_val, True)
