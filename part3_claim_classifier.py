@@ -59,9 +59,9 @@ class BaseClassifier():
         #     print(name, param.data)
         # print()
         if optimiser == "sgd":
-            self._optimiser = optim.SGD(self._net.parameters(), learning_rate)
-            self._optimiser_aid = optim.SGD(self._net_aid.parameters(), learning_rate)
-            self._optimiser_aid2 = optim.SGD(self._net_aid2.parameters(), learning_rate)
+            self._optimiser = optim.SGD(self._net.parameters(), learning_rate, weight_decay = 0.01)
+            self._optimiser_aid = optim.SGD(self._net_aid.parameters(), learning_rate, weight_decay = 0.01)
+            self._optimiser_aid2 = optim.SGD(self._net_aid2.parameters(), learning_rate, weight_decay = 0.01)
         elif optimiser == "adam":
             self._optimiser = optim.Adam(self._net.parameters(), learning_rate)
             self._optimiser_aid = optim.Adam(self._net_aid.parameters(), learning_rate)
@@ -255,7 +255,7 @@ class BaseClassifier():
             validation_loader = DataLoader(validation, batch_size=len(X_val))
             for x_validation, y_validation in validation_loader:
 
-                prediction = self._net_aid(x_validation)
+                prediction = self._net_aid2(x_validation)
 
                 roc_auc = roc_auc_score(y_val, prediction.cpu().detach().numpy())
                 roc_auc_hist_aid2.append(roc_auc)
@@ -264,9 +264,9 @@ class BaseClassifier():
 
             # Early stopping
             if e > 20 and early_stop:
-                if (((roc_auc_hist_aid[-1] - roc_auc_hist_aid[-2]) + \
-                    (roc_auc_hist_aid[-2] - roc_auc_hist_aid[-3]) + \
-                    (roc_auc_hist_aid[-3] - roc_auc_hist_aid[-4])) < 0):
+                if (((roc_auc_hist_aid2[-1] - roc_auc_hist_aid2[-2]) + \
+                    (roc_auc_hist_aid2[-2] - roc_auc_hist_aid2[-3]) + \
+                    (roc_auc_hist_aid2[-3] - roc_auc_hist_aid2[-4])) < 0):
                         # print("Early stopping ...")
                         break
 
