@@ -86,7 +86,6 @@ class PricingModel():
         THRESHOLD = 0.1
         
         if train:
-            print("in train!")
             # If training, save attributes to remove, else, use the stored list
             self._rm_attr = filter_attributes(X_raw, THRESHOLD)
             # Store removed rows that have # of nan or zeros > 10% of #_of_features and apply to y_train
@@ -94,7 +93,6 @@ class PricingModel():
             X_raw = np.delete(X_raw, self._rm_rows, 0)
             self._oe = preprocessing.OrdinalEncoder(categories=[['Mini','Median1','Median2','Maxi'],['Retired','WorkPrivate','Professional','AllTrips']])
 
-        print("rm_attr: ", self._rm_attr)
         for att in self._rm_attr:
             if att in [e.value for e in ORDINAL]:
                 ORDINAL.remove(Data(att))
@@ -117,7 +115,6 @@ class PricingModel():
         NUM = np.array(NUM).transpose()
         ORD = np.array(ORD).transpose()
         CAT = np.array(CAT).transpose()
-        print("NUM: ", NUM.shape, "CAT: ", CAT.shape, "ORD: ", ORD.shape)
 
         # Fill in missing values
         # TODO: use IterativeImputer?
@@ -127,14 +124,11 @@ class PricingModel():
 
         # for ORDINAL type, replace nan with "NA"
         ORD = imp_NA.fit_transform(ORD)
-        print("ORD1: ", ORD.shape)   
         # for NUMERICAL type, replace nan and 0 with mean
         NUM = imp_replace_nan.fit_transform(NUM)
         NUM = imp_replace_zero.fit_transform(NUM)
-        print("NUM: ", NUM.shape)
         # for CATEGORICAL type, replace nan with "NA"
         CAT = imp_NA.fit_transform(CAT)
-        print("CAT: ", CAT.shape)
 
         # Transform categorical/ordinal strings into numerical labels
         if train: 
@@ -145,17 +139,14 @@ class PricingModel():
                 self._lb.append(lb.fit(CAT[:,i]))
 
         ORD = self._oe.transform(ORD)
-        print("ORD2: ", ORD.shape)   
         # Merge ORD and NUM into X_clean
         X_clean = np.hstack((ORD, NUM))
-        print("hstack: ", X_clean.shape)
         # Transform CATEGORICAL values into binary labels
         for i in range (CAT.shape[1]):  
             sparse_matrix = self._lb[i].transform(CAT[:,i])
             X_clean = np.hstack((X_clean, sparse_matrix))    
 
         # Use normalisation in base_classifier
-        print("X_clean pricing model: ", X_clean.shape)
         return X_clean.astype(dtype = 'float32') # YOUR CLEAN DATA AS A NUMPY ARRAY
 
     def fit(self, X_raw, y_raw, claims_raw, x_val = None, y_val = None, early_stop = None):
@@ -214,13 +205,11 @@ class PricingModel():
         """
         # =============================================================
         # REMEMBER TO A SIMILAR LINE TO THE FOLLOWING SOMEWHERE IN THE CODE
-        print("inside predict_claim_prob: ", X_raw.shape) 
         try:
             X_raw = X_raw.to_numpy()
         except:
             pass
         X_clean = self._preprocessor(X_raw)
-        print("processed X_clean")
         y_pred = self.base_classifier.predict(X_clean)
         return  y_pred.flatten() # return probabilities for the positive class (label 1)
 
@@ -244,14 +233,11 @@ class PricingModel():
         # =============================================================
         # REMEMBER TO INCLUDE ANY PRICING STRATEGY HERE.
         # For example you could scale all your prices down by a factor
-        print("predict_premium: ", X_raw.shape) 
         try:
             X_raw = X_raw.to_numpy()
         except:
             pass
-        print("predict_claim_prob")
         premium = self.predict_claim_probability(X_raw) * self.y_mean
-        print("premium: ", premium)
         return premium
 
     def save_model(self):
